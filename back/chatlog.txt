@@ -1,0 +1,11 @@
+{"type":"ConversationText","role":"assistant","content":"Hello, I am your AI interviewer. Please introduce yourself."}
+{"type":"ConversationText","role":"user","content":"Hi."}
+{"type":"ConversationText","role":"assistant","content":"Hello!"}
+{"type":"ConversationText","role":"assistant","content":"It’s nice to meet you."}
+{"type":"ConversationText","role":"assistant","content":"Could you please share your name and a little bit about what you do?"}
+{"type":"ConversationText","role":"user","content":"Yeah. My name is Ayush."}
+{"type":"ConversationText","role":"assistant","content":"Nice to meet you, Ayush!"}
+{"type":"ConversationText","role":"assistant","content":"What do you do for work or study?"}
+{"type":"ConversationText","role":"user","content":"Alright. Still working."}
+{"type":"ConversationText","role":"assistant","content":"That sounds great!"}
+{"type":"ConversationText","role":"assistant","content":"Can you tell me what your job is and what you enjoy most about it?"}

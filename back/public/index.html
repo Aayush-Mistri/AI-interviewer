@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>AI Interviewer Debug</title>
+</head>
+<body>
+  <h1>AI Interviewer Debug</h1>
+
+  <button id="start">Start</button>
+  <button id="stop">Stop</button>
+
+  <p id="status">Idle</p>
+  <pre id="log"></pre>
+
+  <script>
+    let socket;
+    let audioContext;
+    let processor;
+    let source;
+    let stream;
+
+    const startBtn = document.getElementById("start");
+    const stopBtn = document.getElementById("stop");
+    const statusEl = document.getElementById("status");
+    const logEl = document.getElementById("log");
+
+    startBtn.onclick = async () => {
+      socket = new WebSocket("ws://localhost:3001");
+      socket.binaryType = "arraybuffer";
+
+      socket.onopen = async () => {
+        statusEl.textContent = "Connected. Speak now.";
+
+        stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+
+        audioContext = new AudioContext({ sampleRate: 24000 });
+        source = audioContext.createMediaStreamSource(stream);
+
+        processor = audioContext.createScriptProcessor(4096, 1, 1);
+
+        processor.onaudioprocess = (event) => {
+          const input = event.inputBuffer.getChannelData(0);
+          const pcm = convertFloat32ToInt16(input);
+
+          if (socket.readyState === WebSocket.OPEN) {
+            socket.send(pcm);
+          }
+        };
+
+        source.connect(processor);
+        processor.connect(audioContext.destination);
+      };
+
+      socket.onmessage = async (event) => {
+        if (typeof event.data === "string") {
+          const msg = JSON.parse(event.data);
+          logEl.textContent += JSON.stringify(msg, null, 2) + "\n";
+          return;
+        }
+
+        const audioBlob = new Blob([event.data], { type: "audio/wav" });
+        const audioUrl = URL.createObjectURL(audioBlob);
+        const audio = new Audio(audioUrl);
+        audio.play();
+      };
+
+      socket.onclose = () => {
+        statusEl.textContent = "Disconnected";
+      };
+    };
+
+    stopBtn.onclick = () => {
+      if (processor) processor.disconnect();
+      if (source) source.disconnect();
+      if (audioContext) audioContext.close();
+      if (stream) stream.getTracks().forEach(track => track.stop());
+      if (socket) socket.close();
+
+      statusEl.textContent = "Stopped";
+    };
+
+    function convertFloat32ToInt16(buffer) {
+      const int16 = new Int16Array(buffer.length);
+
+      for (let i = 0; i < buffer.length; i++) {
+        let sample = Math.max(-1, Math.min(1, buffer[i]));
+        int16[i] = sample < 0 ? sample * 0x8000 : sample * 0x7fff;
+      }
+
+      return int16.buffer;
+    }
+  </script>
+</body>
+</html>
