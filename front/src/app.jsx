@@ -151,25 +151,159 @@ export default function App() {
   }
 
   return (
-    <div style={{ padding: 30, fontFamily: "Arial" }}>
-      <h1>AI Interviewer</h1>
+  <div
+    style={{
+      minHeight: "100vh",
+      background: "linear-gradient(135deg, #0f172a, #111827)",
+      color: "#f9fafb",
+      fontFamily: "Inter, Arial, sans-serif",
+      display: "flex",
+      alignItems: "center",
+      justifyContent: "center",
+      padding: 24,
+    }}
+  >
+    <div
+      style={{
+        width: "100%",
+        maxWidth: 760,
+        background: "rgba(255, 255, 255, 0.06)",
+        border: "1px solid rgba(255, 255, 255, 0.12)",
+        borderRadius: 20,
+        padding: 32,
+        boxShadow: "0 20px 60px rgba(0, 0, 0, 0.35)",
+        backdropFilter: "blur(12px)",
+      }}
+    >
+      <div style={{ marginBottom: 28 }}>
+        <h1
+          style={{
+            margin: 0,
+            fontSize: 36,
+            letterSpacing: "-0.04em",
+          }}
+        >
+          AI Interviewer
+        </h1>
+
+        <p
+          style={{
+            marginTop: 8,
+            color: "#9ca3af",
+            fontSize: 15,
+          }}
+        >
+          Start a real-time voice interview session with your AI agent.
+        </p>
+      </div>
 
       {!connected ? (
-        <button onClick={startInterview}>Start Interview</button>
+        <button
+          onClick={startInterview}
+          style={{
+            background: "#22c55e",
+            color: "#052e16",
+            border: "none",
+            padding: "12px 22px",
+            borderRadius: 999,
+            fontSize: 15,
+            fontWeight: 700,
+            cursor: "pointer",
+            boxShadow: "0 10px 25px rgba(34, 197, 94, 0.25)",
+          }}
+        >
+          Start Interview
+        </button>
       ) : (
-        <button onClick={stopInterview}>Stop Interview</button>
+        <button
+          onClick={stopInterview}
+          style={{
+            background: "#ef4444",
+            color: "#fff",
+            border: "none",
+            padding: "12px 22px",
+            borderRadius: 999,
+            fontSize: 15,
+            fontWeight: 700,
+            cursor: "pointer",
+            boxShadow: "0 10px 25px rgba(239, 68, 68, 0.25)",
+          }}
+        >
+          Stop Interview
+        </button>
       )}
 
+      <div
+        style={{
+          display: "inline-flex",
+          alignItems: "center",
+          gap: 8,
+          marginLeft: 14,
+          color: connected ? "#86efac" : "#fca5a5",
+          fontSize: 14,
+          fontWeight: 600,
+        }}
+      >
+        <span
+          style={{
+            width: 8,
+            height: 8,
+            borderRadius: "50%",
+            background: connected ? "#22c55e" : "#ef4444",
+            display: "inline-block",
+          }}
+        />
+        {connected ? "Connected" : "Disconnected"}
+      </div>
+
       {error && (
-        <p style={{ color: "#b00020", maxWidth: 720 }}>
+        <p
+          style={{
+            marginTop: 20,
+            background: "rgba(239, 68, 68, 0.12)",
+            border: "1px solid rgba(239, 68, 68, 0.35)",
+            color: "#fecaca",
+            padding: "12px 14px",
+            borderRadius: 12,
+            maxWidth: 720,
+            fontSize: 14,
+          }}
+        >
           {error}
         </p>
       )}
 
-      <h3>Events</h3>
-      <pre style={{ background: "#111", color: "#0f0", padding: 15 }}>
-        {events.map((e, i) => JSON.stringify(e, null, 2)).join("\n\n")}
-      </pre>
+      <div style={{ marginTop: 32 }}>
+        <h3
+          style={{
+            marginBottom: 12,
+            fontSize: 18,
+          }}
+        >
+          Events
+        </h3>
+
+        <pre
+          style={{
+            background: "#020617",
+            color: "#22c55e",
+            padding: 18,
+            borderRadius: 14,
+            minHeight: 220,
+            maxHeight: 360,
+            overflow: "auto",
+            fontSize: 13,
+            lineHeight: 1.5,
+            border: "1px solid rgba(255, 255, 255, 0.08)",
+          }}
+        >
+          {events.length
+            ? events.map((e, i) => JSON.stringify(e, null, 2)).join("\n\n")
+            : "No events yet. Start the interview to see live agent events here."}
+        </pre>
+      </div>
     </div>
-  );
+  </div>
+);
+
 }
