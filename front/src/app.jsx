@@ -79,10 +79,14 @@ export default function App() {
   }
 
   async function startInterview() {
-    setError("");
-    setNotice("");
-    setEvaluation(null);
+    transcriptLinesRef.current = [];
+    transcriptTurnsRef.current = [];
     evaluationRef.current = null;
+    setEvaluation(null);
+    setNotice("");
+    setError("");
+  
+    
 
     if (!resumeSession?.sessionId) {
       setError("Upload and process a resume before starting the interview.");
@@ -109,7 +113,7 @@ export default function App() {
       }
     };
 
-    ws.onmessage = (event) => {
+    ws.onmessage = async (event) => {
       if (typeof event.data === "string") {
         const msg = safeParseEvent(event.data);
 
@@ -141,13 +145,34 @@ export default function App() {
         }
 
         if (msg.type === "InterviewEnded") {
-          const formattedTranscript = transcriptTurnsRef.current
-            .map((turn) => `${turn.speaker}: ${turn.text}`)
-            .join("\n");
+          if (msg.type === "InterviewEnded") {
+            const formattedTranscript = transcriptTurnsRef.current
+              .map((turn) => {
+                const label =
+                  turn.speaker === "interviewer" ? "Interviewer" : "Candidate";
 
-          console.log("FINAL STRUCTURED TRANSCRIPT:\n", formattedTranscript);
+                return `${label}: ${turn.text}`;
+              })
+              .join("\n");
 
-          setNotice(msg.reason || "Interview ended.");
+            console.log("FINAL STRUCTURED TRANSCRIPT:\n", formattedTranscript);
+
+            const response = await fetch("http://localhost:3001/api/evaluate-local", {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+              },
+              body: JSON.stringify({
+                transcript: formattedTranscript,
+              }),
+            });
+
+            const evaluation = await response.json();
+
+            console.log("LOCAL LLM EVALUATION:", evaluation);
+
+            setNotice("Local LLM evaluation completed.");
+          }
         }
 
         if (msg.type === "EvaluationSaved") {
