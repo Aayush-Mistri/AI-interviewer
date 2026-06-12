@@ -535,6 +535,7 @@ function extractResumeKeywords(resumeText) {
 async function appendEvaluationRow(row) {
   const workbook = new ExcelJS.Workbook();
   let worksheet;
+  console.log(transcript)
 
   try {
     await workbook.xlsx.readFile(EVALUATION_FILE);

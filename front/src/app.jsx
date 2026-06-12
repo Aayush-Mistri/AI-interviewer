@@ -21,6 +21,8 @@ export default function App() {
   const [uploading, setUploading] = useState(false);
   const [stopping, setStopping] = useState(false);
   const [evaluation, setEvaluation] = useState(null);
+  const transcriptLinesRef = useRef([]);
+  const transcriptTurnsRef = useRef([]);
 
   async function uploadResume() {
     setError("");
@@ -110,10 +112,41 @@ export default function App() {
     ws.onmessage = (event) => {
       if (typeof event.data === "string") {
         const msg = safeParseEvent(event.data);
+
         console.log("Event:", msg);
         setEvents((prev) => [...prev.slice(-10), msg]);
 
+        // Store structured transcript
+        if (
+          msg.type === "ConversationText" &&
+          msg.role &&
+          msg.content
+        ) {
+          const speaker =
+            msg.role === "assistant" ? "interviewer" : "user";
+
+          transcriptTurnsRef.current.push({
+            speaker,
+            text: msg.content,
+          });
+
+          console.log("Structured transcript:", transcriptTurnsRef.current);
+
+          console.log(
+            "Formatted transcript:\n",
+            transcriptTurnsRef.current
+              .map((turn) => `${turn.speaker}: ${turn.text}`)
+              .join("\n")
+          );
+        }
+
         if (msg.type === "InterviewEnded") {
+          const formattedTranscript = transcriptTurnsRef.current
+            .map((turn) => `${turn.speaker}: ${turn.text}`)
+            .join("\n");
+
+          console.log("FINAL STRUCTURED TRANSCRIPT:\n", formattedTranscript);
+
           setNotice(msg.reason || "Interview ended.");
         }
 
@@ -309,7 +342,7 @@ export default function App() {
               fontSize: 15,
             }}
           >
-            Upload a resume, then run a 5-question voice interview tailored to the candidate.
+            New generation of hiring
           </p>
         </section>
 
