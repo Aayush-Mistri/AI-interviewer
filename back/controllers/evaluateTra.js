@@ -60,3 +60,14 @@ ${transcript}
         });
     }
 };
+
+export const evaluationChecker = async (req , res) => {
+    const evaluation = completedEvaluations.get(req.params.sessionId);
+
+  if (!evaluation) {
+    res.status(404).json({ error: "Evaluation is not ready yet." });
+    return;
+  }
+
+  res.json(evaluation);
+}
