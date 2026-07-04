@@ -1,10 +1,12 @@
 import {extractPdfText , normalizeText , extractCandidateName , summarizeResume , extractResumeKeywords} from "../utils/pdfScrap.js"
 import { randomUUID } from "crypto";
-import {resumeSessions} from "../server.js"
+import {resumeSessions} from "../state.js"
 import { config } from "../config.js";
 
 export const resumeScraper = async(req , res) => {
     try {
+        const { jobRole } = req.body;
+
         if (!req.file) {
           res.status(400).json({ error: "Please upload a PDF resume." });
           return;
@@ -28,6 +30,7 @@ export const resumeScraper = async(req , res) => {
     
         resumeSessions.set(sessionId, {
           candidateName,
+          jobRole: jobRole || "General Role",
           resumeText: resumeText.slice(0, config.maxResumeTextChars),
           resumeSummary,
           createdAt: Date.now()

@@ -1,4 +1,4 @@
-import { resumeSessions, completedEvaluations } from "../server.js";
+import { resumeSessions, completedEvaluations } from "../state.js";
 import { WebSocket } from "ws";
 import { config } from "../config.js";
 import { buildInterviewPrompt } from "../utils/deepgramPrompt.js";
@@ -69,7 +69,7 @@ export function handleSocket(clientWs, req) {
                 }
             },
             agent: {
-                greeting: `Hello ${resumeSession.candidateName}, I reviewed your resume. This interview will have 5 questions based on your background and should take about 5 minutes. Let's begin.`,
+                greeting: `Hello ${resumeSession.candidateName}, I reviewed your resume. This interview will have 3-4 questions based on your background and should take about 2 minutes. Let's begin.`,
                 listen: {
                     provider: {
                         type: "deepgram",
@@ -97,7 +97,7 @@ export function handleSocket(clientWs, req) {
 
     const interviewTimer = setTimeout(async () => {
         interviewEndedByTimer = true;
-        await finalizeInterview("The 5-minute interview limit has been reached.", true);
+        await finalizeInterview("The 2-minute interview limit has been reached.", true);
     }, config.interviewDurationMs);
 
     clientWs.on("message", (data, isBinary) => {

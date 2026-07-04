@@ -21,8 +21,7 @@ export const upload = multer({
   }
 });
 
-export const resumeSessions = new Map();
-export const completedEvaluations = new Map();
+import { resumeSessions, completedEvaluations } from "./state.js";
 
 app.use(express.json());
 app.use(cors());

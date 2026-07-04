@@ -67,7 +67,6 @@ export function estimateAnsweredQuestions(transcript) {
 export async function appendEvaluationRow(row) {   
   const workbook = new ExcelJS.Workbook();
   let worksheet;
-  console.log(transcript)
 
   try {
     await workbook.xlsx.readFile(config.evaluationFile);

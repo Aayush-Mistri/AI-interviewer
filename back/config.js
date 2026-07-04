@@ -12,7 +12,7 @@ export const config = {
   deepgramApiKey: process.env.DEEPGRAM_API_KEY,
   frontendOrigin: process.env.FRONTEND_ORIGIN || "*",
   deepgramUrl: "wss://agent.deepgram.com/v1/agent/converse",
-  interviewDurationMs: 5 * 60 * 1000,
+  interviewDurationMs: 2 * 60 * 1000,
   maxResumeTextChars: 6000,
   evaluationFile: path.join(__dirname, "candidate-evaluations.xlsx"),
 };
