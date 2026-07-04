@@ -2,21 +2,15 @@ import express from "express";
 import cors from "cors";
 import http from "http";
 import path from "path";
-import { fileURLToPath } from "url";
-import { WebSocketServer, WebSocket } from "ws";
-import dotenv from "dotenv";
+import { WebSocketServer } from "ws";
 import multer from "multer";
-import ExcelJS from "exceljs";
-
+import { config, __dirname } from "./config.js";
 
 import { evaluateTranscript, evaluationChecker } from "./controllers/evaluateTra.js";
 import { resumeScraper } from "./controllers/resumeLogic.js";
 import { handleSocket } from "./sockets/onConnection.js";
 
-
-export const port = Number(process.env.PORT || 3001);
-export const __filename = fileURLToPath(import.meta.url);
-export const __dirname = path.dirname(__filename);
+export const port = config.port;
 export const app = express();
 export const server = http.createServer(app);
 export const wss = new WebSocketServer({ server });
@@ -27,21 +21,14 @@ export const upload = multer({
   }
 });
 
-
-
 export const resumeSessions = new Map();
 export const completedEvaluations = new Map();
-
-
-
-
 
 app.use(express.json());
 app.use(cors());
 
-
 app.use((req, res, next) => {
-  res.header("Access-Control-Allow-Origin", process.env.FRONTEND_ORIGIN || "*");
+  res.header("Access-Control-Allow-Origin", config.frontendOrigin);
   res.header("Access-Control-Allow-Headers", "Content-Type");
   res.header("Access-Control-Allow-Methods", "GET,POST,OPTIONS");
 
@@ -56,23 +43,17 @@ app.use((req, res, next) => {
 app.get("/health", (_req, res) => {
   res.json({
     ok: true,
-    deepgramConfigured: Boolean(deepgramApiKey),
+    deepgramConfigured: Boolean(config.deepgramApiKey),
   });
 });
 
 app.post("/api/evaluate-local", evaluateTranscript);
-
 app.post("/resume", upload.single("resume"), resumeScraper);
-
 app.get("/evaluation/:sessionId", evaluationChecker);
 
 app.use(express.static(path.join(__dirname, "public")));
 
-wss.on("connection" , handleSocket);
-
-
-
-
+wss.on("connection", handleSocket);
 
 server.on("error", (error) => {
   if (error.code === "EADDRINUSE") {
@@ -83,7 +64,6 @@ server.on("error", (error) => {
   console.error("Server error:", error);
   process.exit(1);
 });
-
 
 server.listen(port, () => {
   console.log(`Server running on port ${port}`);

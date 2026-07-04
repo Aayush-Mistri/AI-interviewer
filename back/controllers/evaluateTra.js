@@ -1,3 +1,5 @@
+import { completedEvaluations } from "../server.js";
+
 export const evaluateTranscript = async (req , res , data) => {
     try {
         const { transcript } = req.body;

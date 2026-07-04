@@ -1,24 +1,3 @@
-import path from "path";
-import { fileURLToPath } from "url";
-import dotenv from "dotenv";
-import multer from "multer";
-import ExcelJS from "exceljs";
-
-
-
-
-export const DEEPGRAM_URL = "wss://agent.deepgram.com/v1/agent/converse";
-export const INTERVIEW_DURATION_MS = 5 * 60 * 1000;
-export const MAX_RESUME_TEXT_CHARS = 6000;
-export const EVALUATION_FILE = path.join(__dirname, "candidate-evaluations.xlsx");
-export const upload = multer({
-  storage: multer.memoryStorage(),
-  limits: {
-    fileSize: 5 * 1024 * 1024
-  }
-});
-
-
 export function buildInterviewPrompt(resumeSession) {
     return `
 You are a strict, time-aware AI interviewer conducting a 5-minute technical interview based on the candidate's resume.
