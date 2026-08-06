@@ -31,6 +31,7 @@ Open the Vite URL shown in the terminal, usually `http://localhost:5173`.
 
 ## Troubleshooting
 
+- It is expected to take some time at starting of the interview.
 - If the backend says `Port 3001 is already in use`, stop the old Node process or change `PORT` in `back/.env`.
 - If the frontend cannot connect, make sure `VITE_AGENT_WS_URL` matches the backend port.
 - If Deepgram disconnects immediately, check the API key and whether the Deepgram project has access to the Agent API and the configured providers.
