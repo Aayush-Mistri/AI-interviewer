@@ -11,21 +11,21 @@ const JOBS = [
     role: "AI Engineer",
     description: "Build next-gen LLM applications, optimize RAG pipelines, and implement cutting-edge agentic workflows.",
     requirements: ["PyTorch/TensorFlow", "LangChain/LlamaIndex", "Vector DBs", "Python"],
-    gradient: "linear-gradient(135deg, #6366f1 0%, #a855f7 100%)",
+    gradient: "linear-gradient(135deg, #111 0%, #555 100%)",
   },
   {
     id: "py-intern",
     role: "Python Intern",
     description: "Develop backend services, automate workflows, and assist in API development using FastAPI and Django.",
     requirements: ["Python", "FastAPI", "SQL", "Git"],
-    gradient: "linear-gradient(135deg, #3b82f6 0%, #2dd4bf 100%)",
+    gradient: "linear-gradient(135deg, #222 0%, #777 100%)",
   },
   {
     id: "web-intern",
     role: "WebDev Intern",
     description: "Craft stunning user interfaces with React and Tailwind, and build scalable frontend architectures.",
     requirements: ["React", "Tailwind CSS", "TypeScript", "Next.js"],
-    gradient: "linear-gradient(135deg, #f43f5e 0%, #fb923c 100%)",
+    gradient: "linear-gradient(135deg, #333 0%, #999 100%)",
   },
 ];
 
@@ -33,10 +33,10 @@ const JOBS = [
 
 const Button = ({ children, onClick, disabled, variant = "primary", style = {} }) => {
   const variants = {
-    primary: { bg: "#fff", color: "#000", hover: "#e5e7eb" },
-    secondary: { bg: "rgba(255,255,255,0.1)", color: "#fff", hover: "rgba(255,255,255,0.2)" },
-    accent: { bg: "#6366f1", color: "#fff", hover: "#4f46e5" },
-    danger: { bg: "#ef4444", color: "#fff", hover: "#dc2626" },
+    primary: { bg: "linear-gradient(135deg, #111 0%, #444 100%)", color: "#fff", hover: "#e5e5e5" },
+    secondary: { bg: "rgba(255,255,255,0.55)", color: "#222", hover: "rgba(255,255,255,0.72)" },
+    accent: { bg: "linear-gradient(135deg, #111 0%, #444 100%)", color: "#fff", hover: "#333" },
+    danger: { bg: "#222", color: "#fff", hover: "#111" },
   };
   const v = variants[variant];
   return (
@@ -44,15 +44,17 @@ const Button = ({ children, onClick, disabled, variant = "primary", style = {} }
       onClick={onClick}
       disabled={disabled}
       style={{
-        background: disabled ? "#334155" : v.bg,
-        color: disabled ? "#94a3b8" : v.color,
-        border: "none",
+        background: disabled ? "#444" : v.bg,
+        color: disabled ? "#aaa" : v.color,
+        border: variant === "secondary" ? "1px solid rgba(255,255,255,0.72)" : "1px solid rgba(255,255,255,0.36)",
         padding: "12px 24px",
-        borderRadius: "12px",
+        borderRadius: "999px",
         fontSize: "16px",
-        fontWeight: "600",
+        fontWeight: "750",
         cursor: disabled ? "not-allowed" : "pointer",
         transition: "all 0.2s ease",
+        boxShadow: disabled ? "none" : "0 14px 30px rgba(0, 0, 0, 0.15)",
+        backdropFilter: "blur(12px)",
         ...style,
       }}
     >
@@ -62,7 +64,7 @@ const Button = ({ children, onClick, disabled, variant = "primary", style = {} }
 };
 
 const Card = ({ children, style = {} }) => (
-  <div style={{ background: "rgba(255, 255, 255, 0.03)", border: "1px solid rgba(255, 255, 255, 0.08)", borderRadius: "24px", padding: "24px", backdropFilter: "blur(10px)", ...style }}>
+  <div style={{ background: "rgba(255, 255, 255, 0.52)", border: "1px solid rgba(255, 255, 255, 0.76)", borderRadius: "28px", padding: "26px", boxShadow: "0 18px 48px rgba(0, 0, 0, 0.12)", backdropFilter: "blur(22px)", ...style }}>
     {children}
   </div>
 );
@@ -72,25 +74,48 @@ const Card = ({ children, style = {} }) => (
 function HomePage() {
   const navigate = useNavigate();
   return (
-    <div style={styles.container}>
-      <header style={styles.header}>
-        <h1 style={styles.logo}>Talent<span style={{color: '#6366f1'}}>AI</span></h1>
-        <p style={styles.tagline}>The future of technical hiring is here.</p>
-      </header>
-      <div style={styles.jobGrid}>
-        {JOBS.map((job) => (
-          <Card key={job.id} style={{...styles.jobCard, position: 'relative', overflow: 'hidden'}}>
-            <div style={{...styles.gradientBar, background: job.gradient}} />
-            <h2 style={styles.jobRole}>{job.role}</h2>
-            <p style={styles.jobDesc}>{job.description}</p>
-            <div style={styles.reqs}>
-              {job.requirements.map(req => <span key={req} style={styles.reqBadge}>{req}</span>)}
+    <div style={{ ...styles.container, ...styles.homeContainer }}>
+      <div style={styles.homeShell}>
+        <nav style={styles.nav}>
+          <h1 style={styles.logo}>AI Interviewer</h1>
+          <span style={styles.navPill}>AI interview screening</span>
+        </nav>
+
+        <section style={styles.hero}>
+          <div style={styles.heroCopy}>
+            <span style={styles.eyebrow}>Minimal hiring workflow</span>
+            <h2 style={styles.heroTitle}>Find your next role with a focused AI interview.</h2>
+            <p style={styles.tagline}>
+              Pick a position, upload your resume, and move into a guided technical interview in minutes.
+            </p>
+          </div>
+          <div style={styles.heroPanel}>
+            <div style={styles.heroMetric}>
+              <span style={styles.metricValue}>3</span>
+              <span style={styles.metricLabel}>open roles</span>
             </div>
-            <Button variant="primary" onClick={() => navigate(`/apply/${job.id}`)} style={{ marginTop: 20, width: '100%' }}>
-              Apply Now
-            </Button>
-          </Card>
-        ))}
+            <div style={styles.heroMetric}>
+              <span style={styles.metricValue}>2m</span>
+              <span style={styles.metricLabel}>setup time</span>
+            </div>
+          </div>
+        </section>
+
+        <div style={styles.jobGrid}>
+          {JOBS.map((job) => (
+            <Card key={job.id} style={{...styles.jobCard, position: 'relative', overflow: 'hidden'}}>
+              <div style={{...styles.gradientBar, background: job.gradient}} />
+              <h2 style={styles.jobRole}>{job.role}</h2>
+              <p style={styles.jobDesc}>{job.description}</p>
+              <div style={styles.reqs}>
+                {job.requirements.map(req => <span key={req} style={styles.reqBadge}>{req}</span>)}
+              </div>
+              <Button variant="primary" onClick={() => navigate(`/apply/${job.id}`)} style={{ marginTop: "auto", width: '100%' }}>
+                Apply Now
+              </Button>
+            </Card>
+          ))}
+        </div>
       </div>
     </div>
   );
@@ -452,8 +477,8 @@ export default function App() {
 const styles = {
   container: {
     minHeight: "100vh",
-    background: "#000",
-    color: "#fff",
+    background: "#f7f7f7",
+    color: "#222",
     fontFamily: "'Inter', system-ui, sans-serif",
     display: "flex",
     flexDirection: "column",
@@ -461,44 +486,125 @@ const styles = {
     justifyContent: "center",
     padding: "40px 20px",
   },
+  homeContainer: {
+    background:
+      "radial-gradient(circle at 12% 18%, rgba(255, 255, 255, 0.74), transparent 28%), radial-gradient(circle at 88% 8%, rgba(0, 0, 0, 0.08), transparent 26%), linear-gradient(135deg, #fff 0%, #f4f4f4 46%, #e9e9e9 100%)",
+    color: "#222",
+    alignItems: "stretch",
+    justifyContent: "flex-start",
+  },
+  homeShell: { width: "100%", maxWidth: "1120px", margin: "0 auto" },
+  nav: {
+    width: "100%",
+    display: "flex",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: "58px",
+  },
+  navPill: {
+    background: "rgba(255, 255, 255, 0.58)",
+    border: "1px solid rgba(255, 255, 255, 0.76)",
+    borderRadius: "999px",
+    color: "#555",
+    fontSize: "13px",
+    fontWeight: "700",
+    padding: "10px 16px",
+    boxShadow: "0 12px 34px rgba(0, 0, 0, 0.08)",
+    backdropFilter: "blur(18px)",
+  },
   header: { textAlign: "center", marginBottom: "60px" },
-  logo: { fontSize: "48px", fontWeight: "800", margin: 0, letterSpacing: "-2px" },
-  tagline: { color: "#94a3b8", fontSize: "20px", marginTop: "10px" },
-  jobGrid: { display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(300px, 1fr))", gap: "30px", width: "100%", maxWidth: "1100px" },
-  jobCard: { position: "relative", overflow: "hidden", transition: "transform 0.3s ease" },
-  gradientBar: { height: "6px", width: "100%", position: "absolute", top: 0, left: 0 },
-  jobRole: { fontSize: "24px", fontWeight: "700", margin: "0 0 12px 0" },
-  jobDesc: { color: "#94a3b8", fontSize: "15px", lineHeight: "1.6", marginBottom: "20px" },
-  reqs: { display: "flex", flexWrap: "wrap", gap: "8px", marginBottom: "20px" },
-  reqBadge: { background: "rgba(255,255,255,0.1)", padding: "4px 10px", borderRadius: "6px", fontSize: "12px", color: "#cbd5e1" },
+  logo: { fontSize: "34px", fontWeight: "800", margin: 0, letterSpacing: "0" },
+  hero: {
+    display: "grid",
+    gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))",
+    gap: "24px",
+    alignItems: "stretch",
+    marginBottom: "28px",
+  },
+  heroCopy: {
+    background: "rgba(255, 255, 255, 0.56)",
+    border: "1px solid rgba(255, 255, 255, 0.78)",
+    borderRadius: "32px",
+    padding: "32px",
+    boxShadow: "0 24px 70px rgba(0, 0, 0, 0.12)",
+    backdropFilter: "blur(22px)",
+  },
+  eyebrow: {
+    color: "#666",
+    fontSize: "13px",
+    fontWeight: "800",
+    textTransform: "uppercase",
+    letterSpacing: "0",
+  },
+  heroTitle: {
+    maxWidth: "760px",
+    fontSize: "42px",
+    lineHeight: "1.08",
+    fontWeight: "850",
+    margin: "18px 0 18px",
+    letterSpacing: "0",
+    color: "#111",
+  },
+  tagline: { color: "#555", fontSize: "18px", lineHeight: "1.7", margin: 0, maxWidth: "680px" },
+  heroPanel: {
+    display: "grid",
+    gap: "16px",
+  },
+  heroMetric: {
+    display: "flex",
+    flexDirection: "column",
+    justifyContent: "center",
+    background: "rgba(255, 255, 255, 0.52)",
+    border: "1px solid rgba(255, 255, 255, 0.78)",
+    borderRadius: "28px",
+    padding: "28px",
+    boxShadow: "0 18px 45px rgba(0, 0, 0, 0.1)",
+    backdropFilter: "blur(20px)",
+  },
+  metricValue: { color: "#111", fontSize: "44px", lineHeight: 1, fontWeight: "850" },
+  metricLabel: { color: "#666", fontSize: "14px", fontWeight: "700", marginTop: "8px" },
+  jobGrid: { display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(260px, 1fr))", gap: "18px", width: "100%" },
+  jobCard: {
+    position: "relative",
+    overflow: "hidden",
+    transition: "transform 0.3s ease, box-shadow 0.3s ease",
+    minHeight: "300px",
+    display: "flex",
+    flexDirection: "column",
+  },
+  gradientBar: { height: "5px", width: "100%", position: "absolute", top: 0, left: 0, opacity: 0.78 },
+  jobRole: { color: "#111", fontSize: "24px", fontWeight: "800", margin: "10px 0 12px 0", letterSpacing: "0" },
+  jobDesc: { color: "#555", fontSize: "15px", lineHeight: "1.65", marginBottom: "20px" },
+  reqs: { display: "flex", flexWrap: "wrap", gap: "8px", marginBottom: "24px" },
+  reqBadge: { background: "rgba(255,255,255,0.62)", border: "1px solid rgba(255,255,255,0.74)", padding: "7px 11px", borderRadius: "999px", fontSize: "12px", color: "#555", fontWeight: "700" },
   centerCard: { maxWidth: "500px", width: "100%", textAlign: "center" },
   title: { fontSize: "32px", fontWeight: "800", marginBottom: "8px" },
-  subtitle: { color: "#94a3b8", marginBottom: "30px" },
+  subtitle: { color: "#777", marginBottom: "30px" },
   uploadBox: { display: "flex", flexDirection: "column", gap: "20px", marginBottom: "20px" },
   fileInput: { background: "rgba(255,255,255,0.05)", border: "1px dashed rgba(255,255,255,0.2)", padding: "20px", borderRadius: "16px", color: "#fff", cursor: "pointer" },
-  errorText: { color: "#ef4444", fontSize: "14px", marginTop: "10px" },
-  successText: { color: "#22c55e", fontSize: "14px", marginTop: "10px" },
-  readyState: { marginTop: "30px", padding: "20px", background: "rgba(34, 197, 94, 0.1)", borderRadius: "16px", border: "1px solid rgba(34, 197, 94, 0.2)" },
+  errorText: { color: "#111", fontSize: "14px", marginTop: "10px" },
+  successText: { color: "#111", fontSize: "14px", marginTop: "10px" },
+  readyState: { marginTop: "30px", padding: "20px", background: "rgba(0, 0, 0, 0.06)", borderRadius: "16px", border: "1px solid rgba(0, 0, 0, 0.14)" },
   interviewCard: { width: "100%", maxWidth: "900px", display: "flex", flexDirection: "column" },
   statusHeader: { display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "40px" },
-  statusDot: { display: "flex", alignItems: "center", gap: "10px", fontSize: "14px", fontWeight: "600", color: "#22c55e" },
-  dot: { width: "8px", height: "8px", background: "#22c55e", borderRadius: "50%", boxShadow: "0 0 10px #22c55e" },
+  statusDot: { display: "flex", alignItems: "center", gap: "10px", fontSize: "14px", fontWeight: "600", color: "#111" },
+  dot: { width: "8px", height: "8px", background: "#111", borderRadius: "50%", boxShadow: "0 0 10px rgba(0, 0, 0, 0.45)" },
   timerText: { marginLeft: "10px", fontFamily: "monospace", color: "#fff", background: "rgba(0,0,0,0.3)", padding: "2px 6px", borderRadius: "4px" },
   visualizer: { display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: "60px 0" },
   aiAvatar: { position: "relative", width: "120px", height: "120px", display: "flex", justifyContent: "center", alignItems: "center" },
-  aiCore: { width: "60px", height: "60px", background: "linear-gradient(135deg, #6366f1, #a855f7)", borderRadius: "50%", zIndex: 2, boxShadow: "0 0 30px rgba(99, 102, 241, 0.6)" },
-  pulseRing: { position: "absolute", width: "100%", height: "100%", border: "2px solid #6366f1", borderRadius: "50%", animation: "pulse 2s infinite" },
-  visualizerText: { marginTop: "30px", fontSize: "20px", fontWeight: "500", color: "#94a3b8" },
+  aiCore: { width: "60px", height: "60px", background: "linear-gradient(135deg, #111, #555)", borderRadius: "50%", zIndex: 2, boxShadow: "0 0 30px rgba(0, 0, 0, 0.35)" },
+  pulseRing: { position: "absolute", width: "100%", height: "100%", border: "2px solid #111", borderRadius: "50%", animation: "pulse 2s infinite" },
+  visualizerText: { marginTop: "30px", fontSize: "20px", fontWeight: "500", color: "#777" },
   logBox: { background: "#000", padding: "20px", borderRadius: "16px", height: "200px", overflowY: "auto", fontSize: "13px", fontFamily: "monospace", border: "1px solid rgba(255,255,255,0.1)" },
   logEntry: { display: "flex", gap: "10px", marginBottom: "6px" },
-  logTimestamp: { color: "#475569" },
-  logRole: { color: "#6366f1", fontWeight: "bold" },
-  logMsg: { color: "#cbd5e1" },
-  emptyLog: { color: "#475569", textAlign: "center", marginTop: "80px" },
-  scoreCircle: { width: "150px", height: "150px", borderRadius: "50%", border: "8px solid #6366f1", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", margin: "0 auto 30px", boxShadow: "0 0 30px rgba(99, 102, 241, 0.3)" },
+  logTimestamp: { color: "#777" },
+  logRole: { color: "#fff", fontWeight: "bold" },
+  logMsg: { color: "#ddd" },
+  emptyLog: { color: "#777", textAlign: "center", marginTop: "80px" },
+  scoreCircle: { width: "150px", height: "150px", borderRadius: "50%", border: "8px solid #111", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", margin: "0 auto 30px", boxShadow: "0 0 30px rgba(0, 0, 0, 0.24)" },
   scoreValue: { fontSize: "48px", fontWeight: "800" },
-  scoreMax: { fontSize: "18px", color: "#94a3b8" },
+  scoreMax: { fontSize: "18px", color: "#777" },
   evalDetails: { display: "flex", justifyContent: "center", gap: "20px", marginBottom: "20px" },
   evalItem: { background: "rgba(255,255,255,0.05)", padding: "10px 20px", borderRadius: "12px", fontSize: "14px" },
-  notesText: { color: "#94a3b8", fontSize: "15px", lineHeight: "1.6", fontStyle: "italic" },
+  notesText: { color: "#777", fontSize: "15px", lineHeight: "1.6", fontStyle: "italic" },
 };
