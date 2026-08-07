@@ -1,12 +1,33 @@
+<div align="center">
+
 # AI Interviewer
 
-AI Interviewer is a voice-based technical screening application. Candidates choose a role, upload a PDF resume, complete a two-minute AI-led interview, and receive a structured performance evaluation.
+### A focused, voice-first technical screening experience
 
-## Live Demo
+Candidates choose a role, upload a resume, complete a two-minute AI-led interview, and receive a structured performance review.
 
-The project is available at [interviewer.aayushmistri.space](https://interviewer.aayushmistri.space).
+[![Live Demo](https://img.shields.io/badge/Live%20Demo-interviewer.aayushmistri.space-111111?style=for-the-badge&logo=googlechrome&logoColor=white)](https://interviewer.aayushmistri.space)
+[![React](https://img.shields.io/badge/Frontend-React%20%2B%20Vite-222222?style=flat-square&logo=react&logoColor=white)](https://react.dev/)
+[![Node.js](https://img.shields.io/badge/Backend-Node.js-333333?style=flat-square&logo=nodedotjs&logoColor=white)](https://nodejs.org/)
+[![WebSocket](https://img.shields.io/badge/Realtime-WebSocket-444444?style=flat-square)](https://developer.mozilla.org/en-US/docs/Web/API/WebSockets_API)
 
-Because the live deployment depends on resume parsing, a remote voice-agent connection, microphone permissions, and post-interview evaluation, users may experience delays while starting an interview or waiting for the final result.
+<br />
+
+| Select a role | Upload a resume | Speak with the interviewer | Review your score |
+|:---:|:---:|:---:|:---:|
+| `01` | `02` | `03` | `04` |
+
+</div>
+
+> [!NOTE]
+> The live demo is available at [interviewer.aayushmistri.space](https://interviewer.aayushmistri.space). Since it depends on resume parsing, microphone permissions, a remote voice-agent connection, and post-interview evaluation, users may experience delays while starting an interview or waiting for the final result.
+
+<details>
+<summary><strong>What makes it different?</strong></summary>
+
+AI Interviewer is built around a short, high-signal screening loop rather than a general chatbot conversation. The interview prompt uses the candidate's selected role and resume context, while the evaluation looks for answer depth, technical reasoning, relevance, and concrete evidence.
+
+</details>
 
 The application is designed as a local full-stack project:
 
@@ -47,6 +68,17 @@ The application is designed as a local full-stack project:
 8. The interview ends when the candidate presses **End Interview** or the two-minute timer expires.
 9. The backend calculates the score, saves the transcript, and exposes the result through the evaluation route.
 10. The browser redirects to the detailed evaluation page.
+
+```mermaid
+flowchart LR
+    A[Choose a role] --> B[Upload PDF resume]
+    B --> C[Resume text extraction]
+    C --> D[Interview session]
+    D <-->|Live audio and text| E[Deepgram Agent]
+    D --> F[Readable transcript]
+    D --> G[Local evaluation rubric]
+    G --> H[Score and detailed feedback]
+```
 
 ## Architecture
 
