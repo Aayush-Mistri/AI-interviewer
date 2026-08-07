@@ -15,6 +15,7 @@ export const config = {
   interviewDurationMs: 2 * 60 * 1000,
   maxResumeTextChars: 6000,
   evaluationFile: path.join(__dirname, "candidate-evaluations.xlsx"),
+  conversationHistoryDir: path.join(__dirname, "conversationHistory"),
 };
 
 export { __filename, __dirname };

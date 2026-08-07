@@ -4,6 +4,7 @@ import { config } from "../config.js";
 import { buildInterviewPrompt } from "../utils/deepgramPrompt.js";
 import { parseClientMessage } from "../utils/pdfScrap.js";
 import { collectTranscriptLine, evaluateCandidate, appendEvaluationRow } from "../utils/postInterview.js";
+import { appendConversationLine, createConversationHistory, finishConversationHistory } from "../utils/conversationHistory.js";
 
 setInterval(() => {
   const expiresBefore = Date.now() - 30 * 60 * 1000;
@@ -43,8 +44,26 @@ export function handleSocket(clientWs, req) {
     const startedAt = Date.now();
     const interviewEvents = [];
     const transcriptLines = [];
-    let evaluationSaved = false;
+    let evaluationPromise = null;
     let interviewEndedByTimer = false;
+    let interviewFinalized = false;
+    let historyWrite = Promise.resolve();
+    const historyReady = createConversationHistory({
+        sessionId,
+        candidateName: resumeSession.candidateName,
+        jobRole: resumeSession.jobRole,
+    });
+
+    function recordConversation(line) {
+        if (!line) return;
+        historyWrite = historyWrite
+            .then(() => historyReady)
+            .then((filePath) => {
+                const speaker = line.speaker === "Candidate" ? `[${resumeSession.candidateName}]` : line.speaker;
+                return appendConversationLine(filePath, speaker, line.text);
+            })
+            .catch((error) => console.error("Conversation history error:", error.message));
+    }
 
     const dgWs = new WebSocket(config.deepgramUrl, {
         headers: {
@@ -105,7 +124,7 @@ export function handleSocket(clientWs, req) {
             const message = parseClientMessage(data);
 
             if (message?.type === "EndInterview") {
-                finalizeInterview("Interview ended by user.", true);
+                if (!interviewFinalized) finalizeInterview("Interview ended by user.", true);
             }
 
             return;
@@ -124,7 +143,7 @@ export function handleSocket(clientWs, req) {
         } else {
             const eventText = data.toString();
             interviewEvents.push(eventText);
-            collectTranscriptLine(eventText, transcriptLines);
+            recordConversation(collectTranscriptLine(eventText, transcriptLines));
             clientWs.send(eventText);
         }
     });
@@ -158,33 +177,51 @@ export function handleSocket(clientWs, req) {
     });
 
     async function saveEvaluationOnce() {
-        if (evaluationSaved) return;
+        if (evaluationPromise) return evaluationPromise;
 
-        evaluationSaved = true;
-        resumeSessions.delete(sessionId);
+        evaluationPromise = (async () => {
+          resumeSessions.delete(sessionId);
+          await historyWrite;
 
-        try {
+          try {
             const durationSeconds = Math.round((Date.now() - startedAt) / 1000);
-            const transcript = transcriptLines.join("\n") || interviewEvents.join("\n").slice(0, 12000);
+            const transcript = transcriptLines.map(({ speaker, text }) => `${speaker}: ${text}`).join("\n") || "No conversation text was captured.";
             const evaluation = evaluateCandidate({
                 resumeText: resumeSession.resumeText,
                 transcript,
                 durationSeconds,
                 endedByTimer: interviewEndedByTimer
             });
+            const historyFile = await historyReady;
 
             const evaluationPayload = {
                 type: "EvaluationSaved",
                 score: evaluation.score,
                 questionsAnswered: evaluation.questionsAnswered,
                 file: config.evaluationFile,
+                conversationHistoryFile: historyFile,
                 durationSeconds,
-                notes: evaluation.notes
+                notes: evaluation.notes,
+                summary: evaluation.summary,
+                scoreBreakdown: evaluation.scoreBreakdown,
+                questionFeedback: evaluation.questionFeedback,
+                strengths: evaluation.strengths,
+                weaknesses: evaluation.weaknesses,
+                improvementAdvice: evaluation.improvementAdvice,
             };
 
             completedEvaluations.set(sessionId, evaluationPayload);
 
-            await appendEvaluationRow({
+            await finishConversationHistory(historyFile, {
+                reason: interviewEndedByTimer ? "Time limit reached" : "Interview ended",
+                score: evaluation.score,
+            });
+
+            if (clientWs.readyState === WebSocket.OPEN) {
+                clientWs.send(JSON.stringify(evaluationPayload));
+            }
+
+            appendEvaluationRow({
                 timestamp: new Date().toISOString(),
                 candidateName: resumeSession.candidateName,
                 score: evaluation.score,
@@ -193,20 +230,29 @@ export function handleSocket(clientWs, req) {
                 endedByTimer: interviewEndedByTimer,
                 resumeSummary: resumeSession.resumeSummary,
                 notes: evaluation.notes,
+                summary: evaluation.summary,
+                scoreBreakdown: JSON.stringify(evaluation.scoreBreakdown),
+                questionFeedback: JSON.stringify(evaluation.questionFeedback),
+                strengths: evaluation.strengths.join(" | "),
+                weaknesses: evaluation.weaknesses.join(" | "),
+                improvementAdvice: evaluation.improvementAdvice,
                 transcript
-            });
-
-            if (clientWs.readyState === WebSocket.OPEN) {
-                clientWs.send(JSON.stringify(evaluationPayload));
-            }
+            }).catch((error) => console.error("Evaluation export error:", error.message));
 
             return evaluationPayload;
-        } catch (error) {
+          } catch (error) {
             console.error("Evaluation save error:", error.message);
-        }
+            evaluationPromise = null;
+            return null;
+          }
+        })();
+
+        return evaluationPromise;
     }
 
     async function finalizeInterview(reason, closeAfterSend) {
+        if (interviewFinalized) return;
+        interviewFinalized = true;
         clearTimeout(interviewTimer);
 
         if (clientWs.readyState === WebSocket.OPEN) {

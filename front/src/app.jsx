@@ -255,8 +255,7 @@ function InterviewPage() {
         if (msg.type === "EvaluationSaved") {
           setEvaluation(msg);
           evaluationRef.current = msg;
-          // Automatically navigate to evaluation after a short delay if not already there
-          setTimeout(() => navigate(`/evaluation/${sessionId}`), 2000);
+          navigate(`/evaluation/${sessionId}`);
         }
 
         if (msg.type === "Error") setError(msg.message);
@@ -350,6 +349,8 @@ function InterviewPage() {
     stopMic();
     if (wsRef.current?.readyState === WebSocket.OPEN) {
       wsRef.current.send(JSON.stringify({ type: "EndInterview" }));
+      // The API is the source of truth if the final websocket message is missed.
+      setTimeout(() => fetchEvaluation(sessionId), 1000);
     } else {
       wsRef.current?.close();
     }
@@ -420,25 +421,35 @@ function EvaluationPage() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    let cancelled = false;
+    let retryTimer;
+
     async function getEval() {
       try {
         const res = await fetch(`${API_URL}/evaluation/${encodeURIComponent(sessionId)}`);
         const data = await res.json();
-        if (res.ok) {
+        if (res.ok && !cancelled) {
           setEvaluation(data);
         } else if (res.status === 404) {
-          setTimeout(getEval, 2000);
+          retryTimer = setTimeout(getEval, 800);
         }
       } catch (e) {
-        console.error(e);
-      } finally {
-        setLoading(false);
+        if (!cancelled) {
+          setLoading(false);
+          console.error(e);
+        }
+        return;
       }
+      if (!cancelled) setLoading(false);
     }
     getEval();
+    return () => {
+      cancelled = true;
+      clearTimeout(retryTimer);
+    };
   }, [sessionId]);
 
-  if (loading) return <div style={styles.container}>Loading evaluation...</div>;
+  if (loading || !evaluation) return <div style={styles.container}>Preparing your interview result...</div>;
 
   return (
     <div style={styles.container}>
@@ -449,16 +460,53 @@ function EvaluationPage() {
         </div>
         <h2 style={styles.title}>Interview Result</h2>
         <div style={styles.evalDetails}>
-          <div style={styles.evalItem}><strong>Questions:</strong> {evaluation?.questionsAnswered}/5</div>
+          <div style={styles.evalItem}><strong>Questions:</strong> {evaluation.questionsAnswered}/5</div>
           <div style={styles.evalItem}><strong>Status:</strong> Complete</div>
         </div>
-        {evaluation?.notes && <p style={styles.notesText}>{evaluation.notes}</p>}
+        {evaluation.summary && <p style={styles.notesText}>{evaluation.summary}</p>}
+        {evaluation.scoreBreakdown && (
+          <div style={styles.breakdown}>
+            {Object.entries(evaluation.scoreBreakdown).map(([label, value]) => (
+              <div key={label} style={styles.breakdownRow}>
+                <span>{formatScoreLabel(label)}</span>
+                <span style={styles.breakdownValue}>{value}</span>
+              </div>
+            ))}
+          </div>
+        )}
+        {evaluation.questionFeedback?.length > 0 && (
+          <div style={styles.questionReview}>
+            <h3 style={styles.sectionTitle}>Question review</h3>
+            {evaluation.questionFeedback.map((item, index) => (
+              <div key={`${item.question}-${index}`} style={styles.questionItem}>
+                <strong>Q{index + 1}. {item.question}</strong>
+                <p><b>Your answer:</b> {item.answer}</p>
+                <p>{item.assessment} <span style={styles.inlineScore}>Evidence score: {item.score}/100</span></p>
+              </div>
+            ))}
+          </div>
+        )}
+        <div style={styles.feedbackGrid}>
+          <div style={styles.feedbackBlock}>
+            <strong>Strengths</strong>
+            {evaluation.strengths?.map((item) => <p key={item}>{item}</p>)}
+          </div>
+          <div style={styles.feedbackBlock}>
+            <strong>Focus next</strong>
+            {evaluation.weaknesses?.map((item) => <p key={item}>{item}</p>)}
+          </div>
+        </div>
+        {evaluation.improvementAdvice && <p style={styles.adviceText}>{evaluation.improvementAdvice}</p>}
         <Button variant="primary" onClick={() => navigate("/")} style={{marginTop: 30, width: '100%'}}>
           Return Home
         </Button>
       </Card>
     </div>
   );
+}
+
+function formatScoreLabel(label) {
+  return label.replace(/([A-Z])/g, " $1").replace(/^./, (character) => character.toUpperCase());
 }
 
 export default function App() {
@@ -607,4 +655,14 @@ const styles = {
   evalDetails: { display: "flex", justifyContent: "center", gap: "20px", marginBottom: "20px" },
   evalItem: { background: "rgba(255,255,255,0.05)", padding: "10px 20px", borderRadius: "12px", fontSize: "14px" },
   notesText: { color: "#777", fontSize: "15px", lineHeight: "1.6", fontStyle: "italic" },
+  feedbackGrid: { display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))", gap: "12px", textAlign: "left", marginTop: "22px" },
+  feedbackBlock: { background: "rgba(0,0,0,0.05)", border: "1px solid rgba(0,0,0,0.1)", borderRadius: "16px", padding: "16px", color: "#333", fontSize: "14px", lineHeight: "1.5" },
+  adviceText: { background: "#111", color: "#fff", borderRadius: "16px", padding: "16px", fontSize: "14px", lineHeight: "1.5", textAlign: "left" },
+  breakdown: { display: "grid", gap: "8px", marginTop: "20px", padding: "16px", background: "rgba(0,0,0,0.05)", borderRadius: "16px", textAlign: "left" },
+  breakdownRow: { display: "flex", justifyContent: "space-between", gap: "16px", color: "#555", fontSize: "14px" },
+  breakdownValue: { color: "#111", fontWeight: "800" },
+  questionReview: { marginTop: "24px", textAlign: "left" },
+  sectionTitle: { fontSize: "18px", margin: "0 0 12px", color: "#111" },
+  questionItem: { padding: "14px 0", borderTop: "1px solid rgba(0,0,0,0.12)", color: "#444", fontSize: "14px", lineHeight: "1.55" },
+  inlineScore: { color: "#111", fontWeight: "800" },
 };

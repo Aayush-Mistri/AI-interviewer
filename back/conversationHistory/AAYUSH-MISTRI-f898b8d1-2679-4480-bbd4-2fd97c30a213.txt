@@ -1,0 +1,37 @@
+AI Interviewer - Conversation History
+Candidate: AAYUSH MISTRI
+Role: AI Engineer
+Session ID: f898b8d1-2679-4480-bbd4-2fd97c30a213
+Started: 7 Aug 2026, 7:12:56 pm
+AI:Hello AAYUSH MISTRI, I reviewed your resume. This interview will have 3-4 questions based on your background and should take about 2 minutes. Let's begin.
+[AAYUSH MISTRI]:Yeah. That's cool.
+AI:For your project "Voice-Powered AI Interview Agent," what specific challenges did you face when integrating the Deepgram Agent API, and how did you decide on using that particular technology?
+[AAYUSH MISTRI]:I faced many challenges, like
+[AAYUSH MISTRI]:I had to go through docs first,
+[AAYUSH MISTRI]:understand how it works,
+[AAYUSH MISTRI]:Also, I used the Deepgram API because it was free.
+AI:Understood.
+[AAYUSH MISTRI]:And was good for testing.
+AI:Got it.
+AI:Now, considering your experience with Python, how would you implement a basic machine learning model using libraries like scikit-learn?
+AI:Can you walk me through the process?
+[AAYUSH MISTRI]:Actually,
+[AAYUSH MISTRI]:I'm not good
+[AAYUSH MISTRI]:in machine learning specifics.
+[AAYUSH MISTRI]:So
+[AAYUSH MISTRI]:I
+[AAYUSH MISTRI]:just go through with the
+AI:I'll stop you there to ensure we cover everything.
+AI:Next question: If you were given a dataset with many missing values, how would you approach handling those values to prepare the data for an AI model?
+[AAYUSH MISTRI]:Skip.
+AI:Understood.
+AI:Last question: Can you explain what overfitting is in machine learning and how you would mitigate it in a model?
+[AAYUSH MISTRI]:By over overheating,
+[AAYUSH MISTRI]:overfitting means
+AI:I'll stop you there to ensure we cover everything.
+AI:Thank you AAYUSH MISTRI, that concludes our technical screening.
+AI:Please end the interview now.
+
+Interview ended: 7 Aug 2026, 7:14:41 pm
+Reason: Interview ended
+Score: 65
