@@ -31,11 +31,18 @@ AI Interviewer is built around a short, high-signal screening loop rather than a
 
 The application is designed as a local full-stack project:
 
+
 - React and Vite provide the candidate-facing experience.
+  
 - Node.js and Express manage resume processing, sessions, and evaluation results.
+  
 - WebSockets stream microphone audio between the browser and the backend.
+  
 - Deepgram Agent API provides speech recognition, interview reasoning, and voice responses.
+  
 - Local files store readable conversation histories and spreadsheet exports.
+
+  
 
 ## Features
 
