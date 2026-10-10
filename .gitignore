@@ -1,0 +1,7 @@
+/front/node_modules
+/front/dist
+/back/node_modules
+/back/.env
+/back/conversationHistory/
+
+.env
