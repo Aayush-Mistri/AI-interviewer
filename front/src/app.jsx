@@ -164,7 +164,8 @@ function Header() {
 
 // --- Pages ---
 
-function HomePage() {
+// Deepgram Voice Agent API inspired Landing Page for unauthenticated visitors
+function LandingPage() {
   const navigate = useNavigate();
   const [allJobs, setAllJobs] = useState(DEFAULT_JOBS);
 
@@ -177,7 +178,7 @@ function HomePage() {
           setAllJobs([...data.jobs, ...DEFAULT_JOBS]);
         }
       } catch (e) {
-        console.error("Could not fetch custom jobs", e);
+        console.error(e);
       }
     }
     fetchJobs();
@@ -188,9 +189,168 @@ function HomePage() {
       <div style={styles.homeShell}>
         <Header />
 
+        {/* Hero Section inspired by Deepgram Voice Agent API */}
+        <section style={styles.dgHeroSection}>
+          <div style={styles.heroBadge}>
+            ⚡ Powered by Deepgram Voice Agent API
+          </div>
+          <h1 style={styles.dgHeroTitle}>
+            Enterprise-Ready, Real-Time Voice AI Technical Screening
+          </h1>
+          <p style={styles.dgHeroSubtitle}>
+            A unified conversational Voice AI engine that eliminates manual phone screens. Combines real-time Speech-to-Text (Nova-3), LLM Orchestration, and Text-to-Speech (Aura-2) with custom company rules and automated candidate scoring.
+          </p>
+
+          <div style={{ display: "flex", gap: "16px", justifyContent: "center", flexWrap: "wrap", marginTop: "28px" }}>
+            <Button variant="primary" onClick={() => navigate("/signup")} style={{ padding: "14px 32px", fontSize: "16px" }}>
+              Sign Up Free 🚀
+            </Button>
+            <Button variant="secondary" onClick={() => navigate("/login")} style={{ padding: "14px 28px", fontSize: "16px" }}>
+              Log In
+            </Button>
+          </div>
+
+          <div style={styles.dgMetricsStrip}>
+            <div style={styles.dgMetricItem}>
+              <span style={styles.dgMetricNumber}>&lt; 300ms</span>
+              <span style={styles.dgMetricLabel}>Voice Agent Latency</span>
+            </div>
+            <div style={styles.dgMetricItem}>
+              <span style={styles.dgMetricNumber}>Nova-3 + Aura-2</span>
+              <span style={styles.dgMetricLabel}>Full Stack STT / TTS</span>
+            </div>
+            <div style={styles.dgMetricItem}>
+              <span style={styles.dgMetricNumber}>100%</span>
+              <span style={styles.dgMetricLabel}>Custom AI Prompt Control</span>
+            </div>
+            <div style={styles.dgMetricItem}>
+              <span style={{ ...styles.dgMetricNumber, color: "#10b981" }}>Live</span>
+              <span style={styles.dgMetricLabel}>Split-Screen & Video Capture</span>
+            </div>
+          </div>
+        </section>
+
+        {/* Feature Cards Grid (Inspired by Deepgram product page) */}
+        <div style={{ margin: "60px 0 40px" }}>
+          <div style={{ textAlign: "center", marginBottom: "36px" }}>
+            <h2 style={{ fontSize: "32px", fontWeight: "900", color: "#f8fafc" }}>Voice Agent API Capabilities</h2>
+            <p style={{ color: "#94a3b8", fontSize: "16px" }}>Built for low latency, high audio quality, and precision candidate evaluation.</p>
+          </div>
+
+          <div style={styles.dgFeatureGrid}>
+            <Card style={styles.dgFeatureCard}>
+              <div style={styles.dgFeatureIcon}>🎙️</div>
+              <h3 style={styles.dgFeatureTitle}>Unified Voice Agent API</h3>
+              <p style={styles.dgFeatureDesc}>One API that combines speech recognition, LLM reasoning, and natural voice synthesis in real-time, delivering seamless sub-second interviews.</p>
+            </Card>
+
+            <Card style={styles.dgFeatureCard}>
+              <div style={styles.dgFeatureIcon}>⚙️</div>
+              <h3 style={styles.dgFeatureTitle}>Custom AI Instruction Injection</h3>
+              <p style={styles.dgFeatureDesc}>Hiring companies can configure role-specific requirements and custom prompt guidelines injected straight into the interviewer's system prompt.</p>
+            </Card>
+
+            <Card style={styles.dgFeatureCard}>
+              <div style={styles.dgFeatureIcon}>📹</div>
+              <h3 style={styles.dgFeatureTitle}>Split-Screen Camera & Audio Recording</h3>
+              <p style={styles.dgFeatureDesc}>Includes an animated AI agent avatar, live candidate camera feed, and floating Netflix-style real-time subtitles stored as lightweight WebM videos.</p>
+            </Card>
+
+            <Card style={styles.dgFeatureCard}>
+              <div style={styles.dgFeatureIcon}>🏆</div>
+              <h3 style={styles.dgFeatureTitle}>Restricted Company Leaderboards</h3>
+              <p style={styles.dgFeatureDesc}>Recruiters and hiring managers get an exclusive dashboard with candidate evaluation scores, full transcripts, and video review controls.</p>
+            </Card>
+          </div>
+        </div>
+
+        {/* Job Positions Direct Access Showcase */}
+        <div style={{ margin: "50px 0 20px" }}>
+          <div style={styles.sectionHeader}>
+            <h3 style={styles.sectionTitle}>Featured Voice AI Screenings</h3>
+            <span style={styles.sectionSubtitle}>Select a job position below to take an AI voice screening</span>
+          </div>
+
+          <div style={styles.jobGrid}>
+            {allJobs.map((job) => (
+              <Card key={job.id} style={styles.jobCard}>
+                <div style={{ ...styles.cardGlow, background: job.gradient || "linear-gradient(135deg, #3b82f6, #1d4ed8)" }} />
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: "12px" }}>
+                  <div>
+                    <h3 style={styles.jobRole}>{job.role}</h3>
+                    <span style={styles.companyNameText}>🏢 {job.companyName || job.companyDetails?.name || "Partner Company"}</span>
+                  </div>
+                  <span style={styles.liveTag}>AI Ready</span>
+                </div>
+                <p style={styles.jobDesc}>{job.description}</p>
+
+                <div style={styles.reqs}>
+                  {(Array.isArray(job.requirements) ? job.requirements : [job.requirements]).map(req => (
+                    <span key={req} style={styles.reqBadge}>{req}</span>
+                  ))}
+                </div>
+
+                <Button variant="primary" onClick={() => navigate(`/apply/${job.id}`)} style={{ marginTop: "auto", width: '100%' }}>
+                  Apply & Take Interview →
+                </Button>
+              </Card>
+            ))}
+          </div>
+        </div>
+
+      </div>
+    </div>
+  );
+}
+
+function HomePage() {
+  const navigate = useNavigate();
+  const [allJobs, setAllJobs] = useState(DEFAULT_JOBS);
+  const user = getStoredUser();
+
+  async function fetchJobs() {
+    try {
+      const res = await fetch(`${API_URL}/api/jobs`);
+      const data = await res.json();
+      if (data?.jobs?.length) {
+        setAllJobs([...data.jobs, ...DEFAULT_JOBS]);
+      } else {
+        setAllJobs(DEFAULT_JOBS);
+      }
+    } catch (e) {
+      console.error("Could not fetch custom jobs", e);
+    }
+  }
+
+  useEffect(() => {
+    fetchJobs();
+  }, []);
+
+  async function handleDeleteJob(jobId) {
+    if (!window.confirm("Are you sure you want to delete this job posting?")) return;
+    try {
+      const res = await fetch(`${API_URL}/api/jobs/${jobId}`, { method: "DELETE" });
+      if (res.ok) {
+        setAllJobs(prev => prev.filter(j => j.id !== jobId));
+      }
+    } catch (e) {
+      console.error("Failed to delete job", e);
+    }
+  }
+
+  // If user is not logged in, show the Deepgram-inspired Landing Page!
+  if (!user) {
+    return <LandingPage />;
+  }
+
+  return (
+    <div style={styles.container}>
+      <div style={styles.homeShell}>
+        <Header />
+
         <section style={styles.hero}>
           <div style={styles.heroCopy}>
-            <div style={styles.heroBadge}>⚡ Next-Gen Voice AI Screening</div>
+            <div style={styles.heroBadge}>⚡ Candidate & Company Dashboard</div>
             <h2 style={styles.heroTitle}>Autonomous Voice-Led Technical Screening.</h2>
             <p style={styles.tagline}>
               Companies configure custom role criteria and AI instructions. Candidates upload resumes and engage in a live split-screen voice interview evaluated in real-time.
@@ -239,9 +399,16 @@ function HomePage() {
                 </div>
               )}
 
-              <Button variant="primary" onClick={() => navigate(`/apply/${job.id}`)} style={{ marginTop: "auto", width: '100%' }}>
-                Apply & Take Interview →
-              </Button>
+              <div style={{ display: "flex", gap: "10px", marginTop: "auto" }}>
+                <Button variant="primary" onClick={() => navigate(`/apply/${job.id}`)} style={{ flex: 1 }}>
+                  Apply & Take Interview →
+                </Button>
+                {user?.isCompany && (
+                  <Button variant="danger" onClick={() => handleDeleteJob(job.id)} style={{ padding: "11px 16px" }} title="Delete Job Post">
+                    🗑️
+                  </Button>
+                )}
+              </div>
             </Card>
           ))}
         </div>
@@ -1237,4 +1404,18 @@ const styles = {
   evalSummaryText: { color: "#cbd5e1", fontSize: "14px", lineHeight: "1.65", background: "rgba(255, 255, 255, 0.04)", padding: "16px", borderRadius: "16px", border: "1px solid rgba(255, 255, 255, 0.08)" },
   breakdownBox: { display: "grid", gap: "8px", marginTop: "16px", padding: "16px", background: "#090d16", border: "1px solid rgba(255, 255, 255, 0.08)", borderRadius: "16px", textAlign: "left" },
   breakdownRow: { display: "flex", justifyContent: "space-between", gap: "16px", color: "#cbd5e1", fontSize: "13px" },
+
+  // Deepgram Landing Page Styles
+  dgHeroSection: { textAlign: "center", padding: "40px 20px 20px", background: "rgba(15, 23, 42, 0.6)", borderRadius: "32px", border: "1px solid rgba(255, 255, 255, 0.1)", backdropFilter: "blur(20px)", boxShadow: "0 20px 50px rgba(0,0,0,0.6)" },
+  dgHeroTitle: { fontSize: "42px", fontWeight: "900", color: "#f8fafc", margin: "16px 0", lineHeight: "1.15", letterSpacing: "-1px" },
+  dgHeroSubtitle: { fontSize: "16px", color: "#94a3b8", maxWidth: "800px", margin: "0 auto", lineHeight: "1.6" },
+  dgMetricsStrip: { display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: "16px", marginTop: "40px", borderTop: "1px solid rgba(255,255,255,0.1)", paddingTop: "24px" },
+  dgMetricItem: { display: "flex", flexDirection: "column", alignItems: "center" },
+  dgMetricNumber: { fontSize: "24px", fontWeight: "900", color: "#38bdf8" },
+  dgMetricLabel: { fontSize: "12px", color: "#64748b", marginTop: "4px" },
+  dgFeatureGrid: { display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(260px, 1fr))", gap: "20px" },
+  dgFeatureCard: { textAlign: "left", display: "flex", flexDirection: "column", gap: "8px" },
+  dgFeatureIcon: { fontSize: "32px", marginBottom: "8px" },
+  dgFeatureTitle: { fontSize: "18px", fontWeight: "800", color: "#f8fafc", margin: 0 },
+  dgFeatureDesc: { fontSize: "13px", color: "#94a3b8", lineHeight: "1.5", margin: 0 },
 };

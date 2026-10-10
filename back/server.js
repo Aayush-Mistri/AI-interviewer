@@ -228,6 +228,28 @@ app.post("/api/jobs", async (req, res) => {
   }
 });
 
+app.delete("/api/jobs/:id", async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    // Delete from in-memory array
+    const memoryIdx = customJobs.findIndex(j => j.id === id);
+    if (memoryIdx !== -1) {
+      customJobs.splice(memoryIdx, 1);
+    }
+
+    // Delete from MongoDB if connected
+    if (mongoose.connection.readyState === 1) {
+      await Job.deleteOne({ id });
+    }
+
+    res.json({ message: "Job post deleted successfully.", id });
+  } catch (err) {
+    console.error("Delete job error:", err);
+    res.status(500).json({ error: "Could not delete job post." });
+  }
+});
+
 app.get("/api/leaderboard", async (req, res) => {
   try {
     const { userEmail } = req.query;
@@ -236,20 +258,26 @@ app.get("/api/leaderboard", async (req, res) => {
       return res.status(403).json({ error: "Unauthorized access. Leaderboard is strictly restricted to verified company accounts." });
     }
 
+    const normalizedEmail = String(userEmail).trim().toLowerCase();
     let isCompany = false;
     let userId = null;
+    let companyName = null;
 
     if (mongoose.connection.readyState === 1) {
-      const user = await User.findOne({ email: userEmail.toLowerCase() });
+      const user = await User.findOne({ email: normalizedEmail });
       if (user && user.isCompany) {
         isCompany = true;
         userId = user._id.toString();
+        companyName = user.companyName;
       }
-    } else {
-      const mem = memoryUsers.find(u => u.email === userEmail.toLowerCase());
+    }
+
+    if (!isCompany) {
+      const mem = memoryUsers.find(u => u.email === normalizedEmail);
       if (mem && mem.isCompany) {
         isCompany = true;
         userId = mem.id;
+        companyName = mem.companyName;
       }
     }
 
@@ -257,14 +285,25 @@ app.get("/api/leaderboard", async (req, res) => {
       return res.status(403).json({ error: "Access Denied. Only registered hiring companies can view interview leaderboard candidate records." });
     }
 
+    const sortOrder = req.query.order === 'desc' ? -1 : 1;
+
     if (mongoose.connection.readyState === 1) {
-      const evaluations = await Evaluation.find({ companyId: userId }).sort({ score: req.query.order === 'desc' ? -1 : 1 });
-      if (evaluations && evaluations.length) return res.json({ leaderboard: evaluations });
+      // Find evaluations matching companyId or companyName or return all evaluations if company created default jobs
+      const queryFilter = {
+        $or: [
+          { companyId: userId },
+          { companyName: companyName },
+          { companyId: null }
+        ]
+      };
+      const evaluations = await Evaluation.find(queryFilter).sort({ score: sortOrder });
+      return res.json({ leaderboard: evaluations || [] });
     }
 
-    const memoryList = Array.from(completedEvaluations.values());
-    const sortOrder = req.query.order === 'desc' ? -1 : 1;
-    memoryList.sort((a, b) => (a.score - b.score) * sortOrder);
+    const memoryList = Array.from(completedEvaluations.values()).filter(ev => {
+      return !ev.companyId || ev.companyId === userId || ev.companyName === companyName;
+    });
+    memoryList.sort((a, b) => ((a.score || 0) - (b.score || 0)) * sortOrder);
 
     res.json({ leaderboard: memoryList });
   } catch (err) {
