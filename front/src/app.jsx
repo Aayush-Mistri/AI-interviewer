@@ -12,7 +12,7 @@ const DEFAULT_JOBS = [
   {
     id: "ai-eng",
     role: "AI Engineer",
-    companyName: "TalentAI Core",
+    companyName: "VaadIn Core",
     companyDescription: "Building autonomous agentic workflows & LLM infrastructure.",
     description: "Develop cutting-edge RAG pipelines, fine-tune models, and optimize voice AI agent interaction.",
     requirements: ["PyTorch/TensorFlow", "LangChain/LlamaIndex", "Vector DBs", "Python"],
@@ -123,7 +123,7 @@ function Header() {
         <Link to="/" style={{ textDecoration: "none" }}>
           <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
             <div style={styles.logoPulse} />
-            <h1 style={styles.logo}>Talent<span style={{ color: "#38bdf8" }}>.AI</span></h1>
+            <h1 style={styles.logo}>Vaad<span style={{ color: "#38bdf8" }}>In</span></h1>
           </div>
         </Link>
         <div style={{ display: "flex", gap: "18px", alignItems: "center" }}>
@@ -458,7 +458,7 @@ function LoginPage() {
       </Button>
       <Card style={styles.authCard}>
         <h2 style={styles.authTitle}>Account Login</h2>
-        <p style={styles.authSubtitle}>Access your TalentAI candidate or company portal.</p>
+        <p style={styles.authSubtitle}>Access your VaadIn candidate or company portal.</p>
         <form onSubmit={handleLogin} style={styles.formBox}>
           <input
             type="email"
@@ -542,7 +542,7 @@ function SignupPage() {
       </Button>
       <Card style={{ ...styles.authCard, maxWidth: "560px" }}>
         <h2 style={styles.authTitle}>Create Account</h2>
-        <p style={styles.authSubtitle}>Join TalentAI to take interviews or recruit top candidates.</p>
+        <p style={styles.authSubtitle}>Join VaadIn to take interviews or recruit top candidates.</p>
 
         <div style={styles.companyToggleCard}>
           <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
