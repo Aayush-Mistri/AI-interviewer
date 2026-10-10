@@ -24,7 +24,14 @@ const memoryUsers = [];
 const mongoUri = process.env.MONGO_URI || config.mongoUri;
 if (mongoUri) {
   mongoose.connect(mongoUri, { serverSelectionTimeoutMS: 2000 })
-    .then(() => console.log("Connected to MongoDB Atlas successfully."))
+    .then(async () => {
+      console.log("Connected to MongoDB Atlas successfully.");
+      try {
+        await User.syncIndexes();
+      } catch (idxErr) {
+        console.warn("Index sync notice:", idxErr.message);
+      }
+    })
     .catch((err) => console.warn("MongoDB Atlas connection warning (using in-memory fallback):", err.message));
 }
 
@@ -90,16 +97,33 @@ app.post("/api/signup", async (req, res) => {
           return res.status(400).json({ error: "An account with this email already exists." });
         }
 
-        const newUser = new User({
+        const newUserObj = {
           name: name.trim(),
           email: normalizedEmail,
           password: password,
           isCompany: Boolean(isCompany),
-          companyName: isCompany ? (companyName || name.trim()) : null,
-          companyDescription: isCompany ? (companyDescription || "") : null,
-        });
+        };
 
-        await newUser.save();
+        if (isCompany) {
+          newUserObj.companyName = companyName || name.trim();
+          newUserObj.companyDescription = companyDescription || "";
+        }
+
+        const newUser = new User(newUserObj);
+
+        try {
+          await newUser.save();
+        } catch (saveErr) {
+          if (saveErr.code === 11000 || (saveErr.message && saveErr.message.includes("E11000"))) {
+            const isEmailDup = saveErr.keyPattern?.email || (saveErr.message && saveErr.message.includes("email"));
+            if (isEmailDup) {
+              return res.status(400).json({ error: "An account with this email already exists." });
+            }
+            console.warn("Ignoring non-email duplicate key error during DB save:", saveErr.message);
+          } else {
+            throw saveErr;
+          }
+        }
 
         const userObj = {
           id: newUser._id.toString(),
@@ -118,7 +142,8 @@ app.post("/api/signup", async (req, res) => {
         });
       } catch (dbErr) {
         console.warn("DB signup warning:", dbErr.message);
-        if (dbErr.code === 11000 || (dbErr.message && dbErr.message.includes("E11000"))) {
+        const isEmailDup = dbErr.keyPattern?.email || (dbErr.message && dbErr.message.includes("email"));
+        if (isEmailDup) {
           return res.status(400).json({ error: "An account with this email already exists." });
         }
       }
