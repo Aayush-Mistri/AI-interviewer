@@ -23,6 +23,9 @@ export const upload = multer({
 
 import { resumeSessions, completedEvaluations } from "./state.js";
 
+// In-memory users store
+const users = [];
+
 app.use(express.json());
 app.use(cors());
 
@@ -43,6 +46,69 @@ app.get("/health", (_req, res) => {
   res.json({
     ok: true,
     deepgramConfigured: Boolean(config.deepgramApiKey),
+  });
+});
+
+app.post("/api/signup", (req, res) => {
+  const { name, email, password } = req.body || {};
+
+  if (!name || !name.trim()) {
+    return res.status(400).json({ error: "Name is required." });
+  }
+  if (!email || !email.trim()) {
+    return res.status(400).json({ error: "Email is required." });
+  }
+  if (!password || password.length < 6) {
+    return res.status(400).json({ error: "Password must be at least 6 characters long." });
+  }
+
+  const existingUser = users.find((u) => u.email.toLowerCase() === email.trim().toLowerCase());
+  if (existingUser) {
+    return res.status(400).json({ error: "An account with this email already exists." });
+  }
+
+  const newUser = {
+    id: `usr_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`,
+    name: name.trim(),
+    email: email.trim().toLowerCase(),
+    password: password, // Note: In production, hash passwords securely
+    createdAt: new Date().toISOString()
+  };
+
+  users.push(newUser);
+
+  res.status(201).json({
+    message: "User registered successfully.",
+    user: {
+      id: newUser.id,
+      name: newUser.name,
+      email: newUser.email
+    }
+  });
+});
+
+app.post("/api/login", (req, res) => {
+  const { email, password } = req.body || {};
+
+  if (!email || !email.trim()) {
+    return res.status(400).json({ error: "Email is required." });
+  }
+  if (!password) {
+    return res.status(400).json({ error: "Password is required." });
+  }
+
+  const user = users.find((u) => u.email.toLowerCase() === email.trim().toLowerCase());
+  if (!user || user.password !== password) {
+    return res.status(401).json({ error: "Invalid email or password." });
+  }
+
+  res.json({
+    message: "Login successful.",
+    user: {
+      id: user.id,
+      name: user.name,
+      email: user.email
+    }
   });
 });
 

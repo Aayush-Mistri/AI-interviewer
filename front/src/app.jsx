@@ -29,6 +29,16 @@ const JOBS = [
   },
 ];
 
+// Helper to get stored auth user
+const getStoredUser = () => {
+  try {
+    const userStr = localStorage.getItem("user");
+    return userStr ? JSON.parse(userStr) : null;
+  } catch {
+    return null;
+  }
+};
+
 // --- UI Components ---
 
 const Button = ({ children, onClick, disabled, variant = "primary", style = {} }) => {
@@ -69,6 +79,54 @@ const Card = ({ children, style = {} }) => (
   </div>
 );
 
+function Header() {
+  const navigate = useNavigate();
+  const [user, setUser] = useState(getStoredUser());
+
+  useEffect(() => {
+    const handleStorage = () => setUser(getStoredUser());
+    window.addEventListener("storage", handleStorage);
+    return () => window.removeEventListener("storage", handleStorage);
+  }, []);
+
+  const handleLogout = () => {
+    localStorage.removeItem("user");
+    setUser(null);
+    window.dispatchEvent(new Event("storage"));
+    navigate("/");
+  };
+
+  return (
+    <nav style={styles.nav}>
+      <Link to="/" style={{ textDecoration: "none", color: "inherit" }}>
+        <h1 style={styles.logo}>AI Interviewer</h1>
+      </Link>
+      <div style={{ display: "flex", alignItems: "center", gap: "12px", flexWrap: "wrap" }}>
+        <span style={styles.navPill}>AI interview screening</span>
+        {user ? (
+          <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
+            <span style={{ fontSize: "14px", fontWeight: "700", color: "#111" }}>
+              Hi, {user.name}
+            </span>
+            <Button variant="secondary" onClick={handleLogout} style={{ padding: "8px 16px", fontSize: "14px" }}>
+              Logout
+            </Button>
+          </div>
+        ) : (
+          <div style={{ display: "flex", gap: "8px" }}>
+            <Button variant="secondary" onClick={() => navigate("/login")} style={{ padding: "8px 16px", fontSize: "14px" }}>
+              Login
+            </Button>
+            <Button variant="primary" onClick={() => navigate("/signup")} style={{ padding: "8px 16px", fontSize: "14px" }}>
+              Sign Up
+            </Button>
+          </div>
+        )}
+      </div>
+    </nav>
+  );
+}
+
 // --- Pages ---
 
 function HomePage() {
@@ -76,10 +134,7 @@ function HomePage() {
   return (
     <div style={{ ...styles.container, ...styles.homeContainer }}>
       <div style={styles.homeShell}>
-        <nav style={styles.nav}>
-          <h1 style={styles.logo}>AI Interviewer</h1>
-          <span style={styles.navPill}>AI interview screening</span>
-        </nav>
+        <Header />
 
         <section style={styles.hero}>
           <div style={styles.heroCopy}>
@@ -117,6 +172,163 @@ function HomePage() {
           ))}
         </div>
       </div>
+    </div>
+  );
+}
+
+function LoginPage() {
+  const navigate = useNavigate();
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
+
+  async function handleLogin(e) {
+    if (e) e.preventDefault();
+    setError("");
+    if (!email || !password) {
+      setError("Please fill in all fields.");
+      return;
+    }
+    try {
+      setLoading(true);
+      const res = await fetch(`${API_URL}/api/login`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, password }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Login failed.");
+
+      localStorage.setItem("user", JSON.stringify(data.user));
+      window.dispatchEvent(new Event("storage"));
+      navigate("/");
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  return (
+    <div style={styles.container}>
+      <Button variant="secondary" onClick={() => navigate("/")} style={{ marginBottom: 20 }}>
+        ← Back to Home
+      </Button>
+      <Card style={styles.centerCard}>
+        <h2 style={styles.title}>Login</h2>
+        <p style={styles.subtitle}>Welcome back! Enter your details to log in.</p>
+        <form onSubmit={handleLogin} style={styles.formBox}>
+          <input
+            type="email"
+            placeholder="Email address"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            style={styles.input}
+            required
+          />
+          <input
+            type="password"
+            placeholder="Password"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            style={styles.input}
+            required
+          />
+          {error && <p style={styles.errorText}>{error}</p>}
+          <Button variant="primary" onClick={handleLogin} disabled={loading} style={{ width: "100%", marginTop: "10px" }}>
+            {loading ? "Logging in..." : "Login"}
+          </Button>
+        </form>
+        <p style={{ marginTop: "20px", fontSize: "14px", color: "#555" }}>
+          Don't have an account? <Link to="/signup" style={{ color: "#111", fontWeight: "bold" }}>Sign up</Link>
+        </p>
+      </Card>
+    </div>
+  );
+}
+
+function SignupPage() {
+  const navigate = useNavigate();
+  const [name, setName] = useState("");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
+
+  async function handleSignup(e) {
+    if (e) e.preventDefault();
+    setError("");
+    if (!name || !email || !password) {
+      setError("Please fill in all fields.");
+      return;
+    }
+    if (password.length < 6) {
+      setError("Password must be at least 6 characters long.");
+      return;
+    }
+    try {
+      setLoading(true);
+      const res = await fetch(`${API_URL}/api/signup`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name, email, password }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Signup failed.");
+
+      localStorage.setItem("user", JSON.stringify(data.user));
+      window.dispatchEvent(new Event("storage"));
+      navigate("/");
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  return (
+    <div style={styles.container}>
+      <Button variant="secondary" onClick={() => navigate("/")} style={{ marginBottom: 20 }}>
+        ← Back to Home
+      </Button>
+      <Card style={styles.centerCard}>
+        <h2 style={styles.title}>Sign Up</h2>
+        <p style={styles.subtitle}>Create an account to track your interview progress.</p>
+        <form onSubmit={handleSignup} style={styles.formBox}>
+          <input
+            type="text"
+            placeholder="Full Name"
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            style={styles.input}
+            required
+          />
+          <input
+            type="email"
+            placeholder="Email address"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            style={styles.input}
+            required
+          />
+          <input
+            type="password"
+            placeholder="Password (min 6 characters)"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            style={styles.input}
+            required
+          />
+          {error && <p style={styles.errorText}>{error}</p>}
+          <Button variant="primary" onClick={handleSignup} disabled={loading} style={{ width: "100%", marginTop: "10px" }}>
+            {loading ? "Creating account..." : "Sign Up"}
+          </Button>
+        </form>
+        <p style={{ marginTop: "20px", fontSize: "14px", color: "#555" }}>
+          Already have an account? <Link to="/login" style={{ color: "#111", fontWeight: "bold" }}>Login</Link>
+        </p>
+      </Card>
     </div>
   );
 }
@@ -514,6 +726,8 @@ export default function App() {
     <BrowserRouter>
       <Routes>
         <Route path="/" element={<HomePage />} />
+        <Route path="/login" element={<LoginPage />} />
+        <Route path="/signup" element={<SignupPage />} />
         <Route path="/apply/:jobId" element={<UploadPage />} />
         <Route path="/interview/:sessionId" element={<InterviewPage />} />
         <Route path="/evaluation/:sessionId" element={<EvaluationPage />} />
@@ -628,9 +842,21 @@ const styles = {
   centerCard: { maxWidth: "500px", width: "100%", textAlign: "center" },
   title: { fontSize: "32px", fontWeight: "800", marginBottom: "8px" },
   subtitle: { color: "#777", marginBottom: "30px" },
+  formBox: { display: "flex", flexDirection: "column", gap: "16px", margin: "20px 0" },
+  input: {
+    width: "100%",
+    padding: "14px 18px",
+    borderRadius: "12px",
+    border: "1px solid rgba(0, 0, 0, 0.15)",
+    background: "rgba(255, 255, 255, 0.8)",
+    fontSize: "15px",
+    color: "#222",
+    outline: "none",
+    boxSizing: "border-box",
+  },
   uploadBox: { display: "flex", flexDirection: "column", gap: "20px", marginBottom: "20px" },
   fileInput: { background: "rgba(255,255,255,0.05)", border: "1px dashed rgba(255,255,255,0.2)", padding: "20px", borderRadius: "16px", color: "#fff", cursor: "pointer" },
-  errorText: { color: "#111", fontSize: "14px", marginTop: "10px" },
+  errorText: { color: "#d93025", fontSize: "14px", marginTop: "6px" },
   successText: { color: "#111", fontSize: "14px", marginTop: "10px" },
   readyState: { marginTop: "30px", padding: "20px", background: "rgba(0, 0, 0, 0.06)", borderRadius: "16px", border: "1px solid rgba(0, 0, 0, 0.14)" },
   interviewCard: { width: "100%", maxWidth: "900px", display: "flex", flexDirection: "column" },
