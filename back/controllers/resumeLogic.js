@@ -1,11 +1,11 @@
 import {extractPdfText , normalizeText , extractCandidateName , summarizeResume , extractResumeKeywords} from "../utils/pdfScrap.js"
 import { randomUUID } from "crypto";
-import {resumeSessions} from "../state.js"
+import {resumeSessions, customJobs} from "../state.js"
 import { config } from "../config.js";
 
 export const resumeScraper = async(req , res) => {
     try {
-        const { jobRole } = req.body;
+        const { jobRole, jobId, companyName, companyDescription, candidateRequirements } = req.body;
 
         if (!req.file) {
           res.status(400).json({ error: "Please upload a PDF resume." });
@@ -27,16 +27,23 @@ export const resumeScraper = async(req , res) => {
         const candidateName = extractCandidateName(resumeText);
         const resumeSummary = summarizeResume(resumeText);
         const sessionId = randomUUID();
+
+        // Check if there are associated custom job details
+        let jobDetails = null;
+        if (jobId) {
+          jobDetails = customJobs.find(j => j.id === jobId);
+        }
     
         resumeSessions.set(sessionId, {
           candidateName,
-          jobRole: jobRole || "General Role",
+          jobRole: jobRole || jobDetails?.role || "General Role",
+          companyDetails: jobDetails?.companyDetails || (companyName ? { name: companyName, description: companyDescription } : null),
+          candidateRequirements: jobDetails?.requirements || candidateRequirements || "",
           resumeText: resumeText.slice(0, config.maxResumeTextChars),
           resumeSummary,
           createdAt: Date.now()
         });
     
-        
         res.json({
           sessionId,
           candidateName,
