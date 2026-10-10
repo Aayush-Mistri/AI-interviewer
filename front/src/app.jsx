@@ -213,7 +213,7 @@ function AnnouncementBanner({ onDismiss }) {
 }
 
 // 2. Navigation Bar
-function Navbar({ user, onLogout, onOpenContact, onOpenSearch, onOpenPostJob }) {
+function Navbar({ user, onLogout, onOpenContact, onOpenSearch, onOpenPostJob, isDashboard = false }) {
   const navigate = useNavigate();
   const [dropdownOpen, setDropdownOpen] = useState(null);
 
@@ -222,57 +222,58 @@ function Navbar({ user, onLogout, onOpenContact, onOpenSearch, onOpenPostJob }) 
       <div style={styles.navContainer}>
         {/* Left: Brand Logo & Navigation Links */}
         <div style={styles.navLeft}>
-          <Link to="/" style={styles.navLogoLink}>
+          <Link to={user ? "/home" : "/"} style={styles.navLogoLink}>
             <span style={styles.brandLogo}>VaadIn</span>
             <span style={styles.brandDot}></span>
           </Link>
 
-          <div style={styles.navLinks}>
-            {/* How It Works */}
-            <a href="#how-it-works" style={styles.navLinkAnchor}>
-              How It Works
-            </a>
+          {!isDashboard ? (
+            <div style={styles.navLinks}>
+              {/* How It Works */}
+              <a href="#how-it-works" style={styles.navLinkAnchor}>
+                How It Works
+              </a>
 
-            {/* Core Features */}
-            <a href="#features-section" style={styles.navLinkAnchor}>
-              AI Interviewer Features
-            </a>
+              {/* Core Features */}
+              <a href="#features-section" style={styles.navLinkAnchor}>
+                AI Interviewer Features
+              </a>
 
-            {/* Available Roles */}
-            <a href="#jobs-section" style={styles.navLinkAnchor}>
-              Active Roles
-            </a>
+              {/* Available Roles */}
+              <a href="#jobs-section" style={styles.navLinkAnchor}>
+                Active Roles
+              </a>
 
-            {/* Technical Architecture Dropdown */}
-            <div
-              style={styles.navItemWithDropdown}
-              onMouseEnter={() => setDropdownOpen("tech")}
-              onMouseLeave={() => setDropdownOpen(null)}
-            >
-              <button style={styles.navLinkButton}>
-                AI Architecture <ChevronDownIcon />
-              </button>
-              {dropdownOpen === "tech" && (
-                <div style={styles.dropdownMenu}>
-                  <div style={styles.dropdownItem} onClick={() => navigate("/")}>
-                    <div style={styles.dropdownTitle}>Context Injection (No RAG Loss)</div>
-                    <div style={styles.dropdownDesc}>Full resume tokens injected directly into prompt</div>
+              {/* Technical Architecture Dropdown */}
+              <div
+                style={styles.navItemWithDropdown}
+                onMouseEnter={() => setDropdownOpen("tech")}
+                onMouseLeave={() => setDropdownOpen(null)}
+              >
+                <button style={styles.navLinkButton}>
+                  AI Architecture <ChevronDownIcon />
+                </button>
+                {dropdownOpen === "tech" && (
+                  <div style={styles.dropdownMenu}>
+                    <div style={styles.dropdownItem} onClick={() => navigate("/")}>
+                      <div style={styles.dropdownTitle}>Context Injection (No RAG Loss)</div>
+                      <div style={styles.dropdownDesc}>Full resume tokens injected directly into prompt</div>
+                    </div>
+                    <div style={styles.dropdownItem} onClick={() => navigate("/")}>
+                      <div style={styles.dropdownTitle}>Real-Time Audio Loop</div>
+                      <div style={styles.dropdownDesc}>Nova-3 STT + GPT-4o Brain + Aura-2 TTS</div>
+                    </div>
+                    <div style={styles.dropdownItem} onClick={() => navigate("/")}>
+                      <div style={styles.dropdownTitle}>Qualitative Scoring Rubrics</div>
+                      <div style={styles.dropdownDesc}>Automated technical feedback out of 100</div>
+                    </div>
                   </div>
-                  <div style={styles.dropdownItem} onClick={() => navigate("/")}>
-                    <div style={styles.dropdownTitle}>Real-Time Audio Loop</div>
-                    <div style={styles.dropdownDesc}>Nova-3 STT + GPT-4o Brain + Aura-2 TTS</div>
-                  </div>
-                  <div style={styles.dropdownItem} onClick={() => navigate("/")}>
-                    <div style={styles.dropdownTitle}>Qualitative Scoring Rubrics</div>
-                    <div style={styles.dropdownDesc}>Automated technical feedback out of 100</div>
-                  </div>
-                </div>
-              )}
+                )}
+              </div>
             </div>
-
-            {/* Company Specific Navigation */}
-            {user?.isCompany && (
-              <>
+          ) : (
+            user?.isCompany && (
+              <div style={styles.navLinks}>
                 <Link to="/leaderboard" style={styles.navCompanyLink}>
                   Leaderboard 🏆
                 </Link>
@@ -290,9 +291,9 @@ function Navbar({ user, onLogout, onOpenContact, onOpenSearch, onOpenPostJob }) 
                 >
                   + Post Role
                 </button>
-              </>
-            )}
-          </div>
+              </div>
+            )
+          )}
         </div>
 
         {/* Right: Search, Contact Us, Login, Sign Up */}
@@ -1211,17 +1212,16 @@ function HomePage() {
 
   return (
     <div style={styles.pageContainer}>
-      {showBanner && <AnnouncementBanner onDismiss={() => setShowBanner(false)} />}
-
       <Navbar
         user={user}
         onLogout={handleLogout}
         onOpenContact={() => setIsContactOpen(true)}
         onOpenSearch={() => setIsSearchOpen(true)}
         onOpenPostJob={() => setIsPostJobOpen(true)}
+        isDashboard={true}
       />
 
-      <section style={{ ...styles.jobsSection, paddingTop: "40px" }}>
+      <section style={{ ...styles.jobsSection, paddingTop: "40px", minHeight: "80vh" }}>
         <div style={styles.jobsInner}>
           {/* User Command Center */}
           <div style={styles.userCommandCenter}>
@@ -1322,8 +1322,6 @@ function HomePage() {
           </div>
         </div>
       </section>
-
-      <Footer />
 
       <ContactModal isOpen={isContactOpen} onClose={() => setIsContactOpen(false)} />
       <SearchModal isOpen={isSearchOpen} onClose={() => setIsSearchOpen(false)} jobs={allJobs} />

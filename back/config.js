@@ -9,6 +9,7 @@ const __dirname = path.dirname(__filename);
 
 export const config = {
   port: Number(process.env.PORT || 3001),
+  mongoUri: process.env.MONGO_URI,
   deepgramApiKey: process.env.DEEPGRAM_API_KEY,
   frontendOrigin: process.env.FRONTEND_ORIGIN || "*",
   deepgramUrl: "wss://agent.deepgram.com/v1/agent/converse",

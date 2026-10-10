@@ -84,36 +84,51 @@ app.post("/api/signup", async (req, res) => {
 
     // Check DB first if connected
     if (mongoose.connection.readyState === 1) {
-      const existingUser = await User.findOne({ email: normalizedEmail });
-      if (existingUser) return res.status(400).json({ error: "An account with this email already exists." });
+      try {
+        const existingUser = await User.findOne({ email: normalizedEmail });
+        if (existingUser) {
+          return res.status(400).json({ error: "An account with this email already exists." });
+        }
 
-      const newUser = new User({
-        name: name.trim(),
-        email: normalizedEmail,
-        password: password,
-        isCompany: Boolean(isCompany),
-        companyName: isCompany ? (companyName || name.trim()) : null,
-        companyDescription: isCompany ? (companyDescription || "") : null,
-      });
+        const newUser = new User({
+          name: name.trim(),
+          email: normalizedEmail,
+          password: password,
+          isCompany: Boolean(isCompany),
+          companyName: isCompany ? (companyName || name.trim()) : null,
+          companyDescription: isCompany ? (companyDescription || "") : null,
+        });
 
-      await newUser.save();
+        await newUser.save();
 
-      return res.status(201).json({
-        message: "User registered successfully.",
-        user: {
+        const userObj = {
           id: newUser._id.toString(),
           name: newUser.name,
           email: newUser.email,
           isCompany: newUser.isCompany,
           companyName: newUser.companyName,
           companyDescription: newUser.companyDescription
+        };
+
+        memoryUsers.push(userObj);
+
+        return res.status(201).json({
+          message: "User registered successfully.",
+          user: userObj
+        });
+      } catch (dbErr) {
+        console.warn("DB signup warning:", dbErr.message);
+        if (dbErr.code === 11000 || (dbErr.message && dbErr.message.includes("E11000"))) {
+          return res.status(400).json({ error: "An account with this email already exists." });
         }
-      });
+      }
     }
 
     // In-memory fallback
     const existing = memoryUsers.find(u => u.email === normalizedEmail);
-    if (existing) return res.status(400).json({ error: "An account with this email already exists." });
+    if (existing) {
+      return res.status(400).json({ error: "An account with this email already exists." });
+    }
 
     const memUser = {
       id: `usr_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`,
@@ -126,12 +141,12 @@ app.post("/api/signup", async (req, res) => {
     };
     memoryUsers.push(memUser);
 
-    res.status(201).json({
+    return res.status(201).json({
       message: "User registered successfully.",
       user: memUser
     });
   } catch (err) {
-    console.error("Signup error:", err);
+    console.error("Signup unhandled error:", err);
     res.status(500).json({ error: "Could not create user account." });
   }
 });
@@ -146,22 +161,24 @@ app.post("/api/login", async (req, res) => {
     const normalizedEmail = email.trim().toLowerCase();
 
     if (mongoose.connection.readyState === 1) {
-      const user = await User.findOne({ email: normalizedEmail });
-      if (!user || user.password !== password) {
-        return res.status(401).json({ error: "Invalid email or password." });
-      }
-
-      return res.json({
-        message: "Login successful.",
-        user: {
-          id: user._id.toString(),
-          name: user.name,
-          email: user.email,
-          isCompany: user.isCompany,
-          companyName: user.companyName,
-          companyDescription: user.companyDescription
+      try {
+        const user = await User.findOne({ email: normalizedEmail });
+        if (user && user.password === password) {
+          return res.json({
+            message: "Login successful.",
+            user: {
+              id: user._id.toString(),
+              name: user.name,
+              email: user.email,
+              isCompany: user.isCompany,
+              companyName: user.companyName,
+              companyDescription: user.companyDescription
+            }
+          });
         }
-      });
+      } catch (dbErr) {
+        console.warn("DB login warning:", dbErr.message);
+      }
     }
 
     // In-memory fallback
@@ -170,7 +187,7 @@ app.post("/api/login", async (req, res) => {
       return res.status(401).json({ error: "Invalid email or password." });
     }
 
-    res.json({
+    return res.json({
       message: "Login successful.",
       user
     });
