@@ -3,6 +3,8 @@ import cors from "cors";
 import http from "http";
 import path from "path";
 import fs from "fs";
+import mongoose from "mongoose";
+import dotenv from "dotenv";
 import { WebSocketServer } from "ws";
 import multer from "multer";
 import { config, __dirname } from "./config.js";
@@ -11,6 +13,20 @@ import { evaluateTranscript, evaluationChecker } from "./controllers/evaluateTra
 import { resumeScraper } from "./controllers/resumeLogic.js";
 import { handleSocket } from "./sockets/onConnection.js";
 import { resumeSessions, completedEvaluations, customJobs } from "./state.js";
+import { User, Job, Evaluation } from "./models.js";
+
+dotenv.config();
+
+// In-memory fallback stores
+const memoryUsers = [];
+
+// Connect to MongoDB Atlas if available
+const mongoUri = process.env.MONGO_URI || config.mongoUri;
+if (mongoUri) {
+  mongoose.connect(mongoUri, { serverSelectionTimeoutMS: 2000 })
+    .then(() => console.log("Connected to MongoDB Atlas successfully."))
+    .catch((err) => console.warn("MongoDB Atlas connection warning (using in-memory fallback):", err.message));
+}
 
 export const port = config.port;
 export const app = express();
@@ -26,12 +42,9 @@ if (!fs.existsSync(videosDir)) fs.mkdirSync(videosDir, { recursive: true });
 export const upload = multer({
   storage: multer.memoryStorage(),
   limits: {
-    fileSize: 50 * 1024 * 1024 // 50MB max
+    fileSize: 50 * 1024 * 1024
   }
 });
-
-// In-memory users store
-const users = [];
 
 app.use(express.json());
 app.use(cors());
@@ -54,165 +67,234 @@ app.use(express.static(publicDir));
 app.get("/health", (_req, res) => {
   res.json({
     ok: true,
+    mongoConnected: mongoose.connection.readyState === 1,
     deepgramConfigured: Boolean(config.deepgramApiKey),
   });
 });
 
-app.post("/api/signup", (req, res) => {
-  const { name, email, password, isCompany, companyName, companyDescription } = req.body || {};
+app.post("/api/signup", async (req, res) => {
+  try {
+    const { name, email, password, isCompany, companyName, companyDescription } = req.body || {};
 
-  if (!name || !name.trim()) {
-    return res.status(400).json({ error: "Name is required." });
-  }
-  if (!email || !email.trim()) {
-    return res.status(400).json({ error: "Email is required." });
-  }
-  if (!password || password.length < 6) {
-    return res.status(400).json({ error: "Password must be at least 6 characters long." });
-  }
+    if (!name || !name.trim()) return res.status(400).json({ error: "Name is required." });
+    if (!email || !email.trim()) return res.status(400).json({ error: "Email is required." });
+    if (!password || password.length < 6) return res.status(400).json({ error: "Password must be at least 6 characters long." });
 
-  const existingUser = users.find((u) => u.email.toLowerCase() === email.trim().toLowerCase());
-  if (existingUser) {
-    return res.status(400).json({ error: "An account with this email already exists." });
-  }
+    const normalizedEmail = email.trim().toLowerCase();
 
-  const newUser = {
-    id: `usr_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`,
-    name: name.trim(),
-    email: email.trim().toLowerCase(),
-    password: password,
-    isCompany: Boolean(isCompany),
-    companyName: isCompany ? (companyName || name.trim()) : null,
-    companyDescription: isCompany ? (companyDescription || "") : null,
-    createdAt: new Date().toISOString()
-  };
+    // Check DB first if connected
+    if (mongoose.connection.readyState === 1) {
+      const existingUser = await User.findOne({ email: normalizedEmail });
+      if (existingUser) return res.status(400).json({ error: "An account with this email already exists." });
 
-  users.push(newUser);
+      const newUser = new User({
+        name: name.trim(),
+        email: normalizedEmail,
+        password: password,
+        isCompany: Boolean(isCompany),
+        companyName: isCompany ? (companyName || name.trim()) : null,
+        companyDescription: isCompany ? (companyDescription || "") : null,
+      });
 
-  res.status(201).json({
-    message: "User registered successfully.",
-    user: {
-      id: newUser.id,
-      name: newUser.name,
-      email: newUser.email,
-      isCompany: newUser.isCompany,
-      companyName: newUser.companyName,
-      companyDescription: newUser.companyDescription
+      await newUser.save();
+
+      return res.status(201).json({
+        message: "User registered successfully.",
+        user: {
+          id: newUser._id.toString(),
+          name: newUser.name,
+          email: newUser.email,
+          isCompany: newUser.isCompany,
+          companyName: newUser.companyName,
+          companyDescription: newUser.companyDescription
+        }
+      });
     }
-  });
-});
 
-app.post("/api/login", (req, res) => {
-  const { email, password } = req.body || {};
+    // In-memory fallback
+    const existing = memoryUsers.find(u => u.email === normalizedEmail);
+    if (existing) return res.status(400).json({ error: "An account with this email already exists." });
 
-  if (!email || !email.trim()) {
-    return res.status(400).json({ error: "Email is required." });
-  }
-  if (!password) {
-    return res.status(400).json({ error: "Password is required." });
-  }
-
-  const user = users.find((u) => u.email.toLowerCase() === email.trim().toLowerCase());
-  if (!user || user.password !== password) {
-    return res.status(401).json({ error: "Invalid email or password." });
-  }
-
-  res.json({
-    message: "Login successful.",
-    user: {
-      id: user.id,
-      name: user.name,
-      email: user.email,
-      isCompany: user.isCompany,
-      companyName: user.companyName,
-      companyDescription: user.companyDescription
-    }
-  });
-});
-
-// Company Jobs API
-app.get("/api/jobs", (_req, res) => {
-  res.json({ jobs: customJobs });
-});
-
-app.post("/api/jobs", (req, res) => {
-  const { role, companyName, companyDescription, requirements, gradient, postedBy } = req.body || {};
-
-  if (!role || !role.trim()) {
-    return res.status(400).json({ error: "Role title is required." });
-  }
-
-  const newJob = {
-    id: `job_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`,
-    role: role.trim(),
-    companyDetails: {
-      name: companyName || "Partner Company",
-      description: companyDescription || ""
-    },
-    description: companyDescription || `Hiring for ${role.trim()} position.`,
-    requirements: Array.isArray(requirements) ? requirements : (typeof requirements === 'string' ? requirements.split(',').map(s => s.trim()).filter(Boolean) : []),
-    gradient: gradient || "linear-gradient(135deg, #1e293b 0%, #475569 100%)",
-    postedBy: postedBy || "Company",
-    createdAt: new Date().toISOString()
-  };
-
-  customJobs.push(newJob);
-
-  res.status(201).json({
-    message: "Job posted successfully.",
-    job: newJob
-  });
-});
-
-// Leaderboard API (Returns evaluations sorted by score ascending or descending)
-app.get("/api/leaderboard", (_req, res) => {
-  const list = Array.from(completedEvaluations.values()).map((item) => {
-    return {
-      sessionId: item.sessionId,
-      candidateName: item.candidateName || "Candidate",
-      jobRole: item.jobRole || "Technical Screening",
-      score: item.score || 0,
-      questionsAnswered: item.questionsAnswered || 0,
-      summary: item.summary || "",
-      strengths: item.strengths || [],
-      weaknesses: item.weaknesses || [],
-      transcript: item.transcript || "",
-      videoUrl: item.videoUrl || null,
-      completedAt: item.completedAt || new Date().toISOString()
+    const memUser = {
+      id: `usr_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`,
+      name: name.trim(),
+      email: normalizedEmail,
+      password: password,
+      isCompany: Boolean(isCompany),
+      companyName: isCompany ? (companyName || name.trim()) : null,
+      companyDescription: isCompany ? (companyDescription || "") : null,
     };
-  });
+    memoryUsers.push(memUser);
 
-  // Sort by score ascending / descending (let's sort ascending as requested, or support query parameter)
-  const sortOrder = _req.query.order === 'asc' ? 1 : -1;
-  list.sort((a, b) => (a.score - b.score) * sortOrder);
-
-  res.json({ leaderboard: list });
+    res.status(201).json({
+      message: "User registered successfully.",
+      user: memUser
+    });
+  } catch (err) {
+    console.error("Signup error:", err);
+    res.status(500).json({ error: "Could not create user account." });
+  }
 });
 
-// Interview Video Upload API
-app.post("/api/upload-video", upload.single("video"), (req, res) => {
+app.post("/api/login", async (req, res) => {
+  try {
+    const { email, password } = req.body || {};
+
+    if (!email || !email.trim()) return res.status(400).json({ error: "Email is required." });
+    if (!password) return res.status(400).json({ error: "Password is required." });
+
+    const normalizedEmail = email.trim().toLowerCase();
+
+    if (mongoose.connection.readyState === 1) {
+      const user = await User.findOne({ email: normalizedEmail });
+      if (!user || user.password !== password) {
+        return res.status(401).json({ error: "Invalid email or password." });
+      }
+
+      return res.json({
+        message: "Login successful.",
+        user: {
+          id: user._id.toString(),
+          name: user.name,
+          email: user.email,
+          isCompany: user.isCompany,
+          companyName: user.companyName,
+          companyDescription: user.companyDescription
+        }
+      });
+    }
+
+    // In-memory fallback
+    const user = memoryUsers.find(u => u.email === normalizedEmail);
+    if (!user || user.password !== password) {
+      return res.status(401).json({ error: "Invalid email or password." });
+    }
+
+    res.json({
+      message: "Login successful.",
+      user
+    });
+  } catch (err) {
+    console.error("Login error:", err);
+    res.status(500).json({ error: "Could not authenticate user." });
+  }
+});
+
+app.get("/api/jobs", async (_req, res) => {
+  try {
+    if (mongoose.connection.readyState === 1) {
+      const dbJobs = await Job.find().sort({ createdAt: -1 });
+      if (dbJobs && dbJobs.length) return res.json({ jobs: [...dbJobs, ...customJobs] });
+    }
+    res.json({ jobs: customJobs });
+  } catch (e) {
+    res.json({ jobs: customJobs });
+  }
+});
+
+app.post("/api/jobs", async (req, res) => {
+  try {
+    const { role, companyName, companyDescription, requirements, extraInstructions, companyId, postedBy } = req.body || {};
+
+    if (!role || !role.trim()) return res.status(400).json({ error: "Role title is required." });
+
+    const reqList = Array.isArray(requirements) ? requirements : (typeof requirements === 'string' ? requirements.split(',').map(s => s.trim()).filter(Boolean) : []);
+
+    const newJobObj = {
+      id: `job_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`,
+      role: role.trim(),
+      companyName: companyName || "Partner Company",
+      companyDescription: companyDescription || "",
+      requirements: reqList,
+      extraInstructions: extraInstructions || "",
+      companyId: companyId || null,
+      postedBy: postedBy || "Company"
+    };
+
+    if (mongoose.connection.readyState === 1) {
+      const dbJob = new Job(newJobObj);
+      await dbJob.save();
+    }
+
+    customJobs.push(newJobObj);
+
+    res.status(201).json({
+      message: "Job posted successfully.",
+      job: newJobObj
+    });
+  } catch (err) {
+    console.error("Job post error:", err);
+    res.status(500).json({ error: "Could not publish job posting." });
+  }
+});
+
+app.get("/api/leaderboard", async (req, res) => {
+  try {
+    const { userEmail } = req.query;
+
+    if (!userEmail) {
+      return res.status(403).json({ error: "Unauthorized access. Leaderboard is strictly restricted to verified company accounts." });
+    }
+
+    let isCompany = false;
+    let userId = null;
+
+    if (mongoose.connection.readyState === 1) {
+      const user = await User.findOne({ email: userEmail.toLowerCase() });
+      if (user && user.isCompany) {
+        isCompany = true;
+        userId = user._id.toString();
+      }
+    } else {
+      const mem = memoryUsers.find(u => u.email === userEmail.toLowerCase());
+      if (mem && mem.isCompany) {
+        isCompany = true;
+        userId = mem.id;
+      }
+    }
+
+    if (!isCompany) {
+      return res.status(403).json({ error: "Access Denied. Only registered hiring companies can view interview leaderboard candidate records." });
+    }
+
+    if (mongoose.connection.readyState === 1) {
+      const evaluations = await Evaluation.find({ companyId: userId }).sort({ score: req.query.order === 'desc' ? -1 : 1 });
+      if (evaluations && evaluations.length) return res.json({ leaderboard: evaluations });
+    }
+
+    const memoryList = Array.from(completedEvaluations.values());
+    const sortOrder = req.query.order === 'desc' ? -1 : 1;
+    memoryList.sort((a, b) => (a.score - b.score) * sortOrder);
+
+    res.json({ leaderboard: memoryList });
+  } catch (err) {
+    console.error("Leaderboard error:", err);
+    res.status(500).json({ error: "Could not fetch leaderboard." });
+  }
+});
+
+app.post("/api/upload-video", upload.single("video"), async (req, res) => {
   const { sessionId } = req.body;
 
-  if (!req.file) {
-    return res.status(400).json({ error: "No video file provided." });
-  }
+  if (!req.file) return res.status(400).json({ error: "No video file provided." });
 
   const filename = `interview_${sessionId || Date.now()}.webm`;
   const filePath = path.join(videosDir, filename);
 
-  fs.writeFile(filePath, req.file.buffer, (err) => {
-    if (err) {
-      console.error("Video save error:", err);
-      return res.status(500).json({ error: "Could not save video file." });
-    }
+  fs.writeFile(filePath, req.file.buffer, async (err) => {
+    if (err) return res.status(500).json({ error: "Could not save video file." });
 
     const videoUrl = `/videos/${filename}`;
 
-    // Attach videoUrl to completed evaluation if present
-    if (sessionId && completedEvaluations.has(sessionId)) {
-      const evalData = completedEvaluations.get(sessionId);
-      evalData.videoUrl = videoUrl;
-      completedEvaluations.set(sessionId, evalData);
+    if (sessionId) {
+      if (completedEvaluations.has(sessionId)) {
+        const evalData = completedEvaluations.get(sessionId);
+        evalData.videoUrl = videoUrl;
+        completedEvaluations.set(sessionId, evalData);
+      }
+      if (mongoose.connection.readyState === 1) {
+        try { await Evaluation.updateOne({ sessionId }, { videoUrl }); } catch (e) {}
+      }
     }
 
     res.json({ message: "Video uploaded successfully.", videoUrl });
@@ -227,11 +309,9 @@ wss.on("connection", handleSocket);
 
 server.on("error", (error) => {
   if (error.code === "EADDRINUSE") {
-    console.error(`Port ${port} is already in use. Stop the existing process or set PORT to another value in back/.env.`);
+    console.error(`Port ${port} is already in use.`);
     process.exit(1);
   }
-
-  console.error("Server error:", error);
   process.exit(1);
 });
 

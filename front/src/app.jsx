@@ -4,35 +4,43 @@ import { BrowserRouter, Routes, Route, useNavigate, useParams, Link } from "reac
 const AGENT_WS_URL = import.meta.env.VITE_AGENT_WS_URL || "ws://localhost:3001";
 const API_URL = import.meta.env.VITE_API_URL || AGENT_WS_URL.replace(/^ws/, "http");
 
-// --- Default Hardcoded Jobs ---
+// Animated AI Agent GIF URL (High quality cyberpunk futuristic AI orb / agent)
+const AI_AGENT_GIF = "https://cdn.dribbble.com/users/177029/screenshots/15916845/media/1d293f0b2f00735497ee3594f8ee96f4.gif";
+
+// Default Job Openings
 const DEFAULT_JOBS = [
   {
     id: "ai-eng",
     role: "AI Engineer",
-    companyName: "TalentAI Labs",
-    description: "Build next-gen LLM applications, optimize RAG pipelines, and implement cutting-edge agentic workflows.",
+    companyName: "TalentAI Core",
+    companyDescription: "Building autonomous agentic workflows & LLM infrastructure.",
+    description: "Develop cutting-edge RAG pipelines, fine-tune models, and optimize voice AI agent interaction.",
     requirements: ["PyTorch/TensorFlow", "LangChain/LlamaIndex", "Vector DBs", "Python"],
-    gradient: "linear-gradient(135deg, #0f172a 0%, #334155 100%)",
+    extraInstructions: "Focus heavily on vector indexing speed, RAG evaluation metrics, and real-time streaming audio bottlenecks.",
+    gradient: "linear-gradient(135deg, #10b981 0%, #059669 100%)",
   },
   {
     id: "py-intern",
     role: "Python Intern",
     companyName: "Core Backend Systems",
-    description: "Develop backend services, automate workflows, and assist in API development using FastAPI and Django.",
+    companyDescription: "High-throughput microservices and cloud APIs.",
+    description: "Develop scalable backend REST/WebSocket microservices using FastAPI, Express, and Django.",
     requirements: ["Python", "FastAPI", "SQL", "Git"],
-    gradient: "linear-gradient(135deg, #1e1b4b 0%, #4338ca 100%)",
+    extraInstructions: "Ask about async event loops, database indexing techniques, and clean API design principles.",
+    gradient: "linear-gradient(135deg, #6366f1 0%, #4f46e5 100%)",
   },
   {
     id: "web-intern",
     role: "WebDev Intern",
-    companyName: "PixelCraft UI",
-    description: "Craft stunning user interfaces with React and Tailwind, and build scalable frontend architectures.",
+    companyName: "PixelCraft Design Labs",
+    companyDescription: "Next-gen glassmorphic user experiences.",
+    description: "Craft responsive, animated, dark-themed UI architectures with React, Vite, and Web Audio API.",
     requirements: ["React", "Tailwind CSS", "TypeScript", "Next.js"],
-    gradient: "linear-gradient(135deg, #064e3b 0%, #047857 100%)",
+    extraInstructions: "Evaluate component modularity, state management best practices, and WebSockets integration.",
+    gradient: "linear-gradient(135deg, #ec4899 0%, #d946ef 100%)",
   },
 ];
 
-// Helper to get stored auth user
 const getStoredUser = () => {
   try {
     const userStr = localStorage.getItem("user");
@@ -42,14 +50,14 @@ const getStoredUser = () => {
   }
 };
 
-// --- UI Components ---
+// --- Custom Reusable Components ---
 
 const Button = ({ children, onClick, disabled, variant = "primary", style = {}, type = "button" }) => {
   const variants = {
-    primary: { bg: "linear-gradient(135deg, #0f172a 0%, #1e293b 100%)", color: "#f8fafc", border: "1px solid rgba(255,255,255,0.2)" },
-    secondary: { bg: "rgba(255,255,255,0.75)", color: "#0f172a", border: "1px solid rgba(0,0,0,0.12)" },
-    accent: { bg: "linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%)", color: "#ffffff", border: "none" },
-    danger: { bg: "#dc2626", color: "#ffffff", border: "none" },
+    primary: { bg: "linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%)", color: "#ffffff", border: "1px solid rgba(59, 130, 246, 0.4)", shadow: "0 0 20px rgba(59, 130, 246, 0.35)" },
+    secondary: { bg: "rgba(30, 41, 59, 0.8)", color: "#f8fafc", border: "1px solid rgba(255, 255, 255, 0.12)", shadow: "none" },
+    accent: { bg: "linear-gradient(135deg, #10b981 0%, #059669 100%)", color: "#ffffff", border: "1px solid rgba(16, 185, 129, 0.4)", shadow: "0 0 20px rgba(16, 185, 129, 0.35)" },
+    danger: { bg: "linear-gradient(135deg, #ef4444 0%, #dc2626 100%)", color: "#ffffff", border: "none", shadow: "0 0 20px rgba(239, 68, 68, 0.35)" },
   };
   const v = variants[variant] || variants.primary;
   return (
@@ -58,17 +66,18 @@ const Button = ({ children, onClick, disabled, variant = "primary", style = {}, 
       onClick={onClick}
       disabled={disabled}
       style={{
-        background: disabled ? "#94a3b8" : v.bg,
-        color: disabled ? "#f1f5f9" : v.color,
+        background: disabled ? "#334155" : v.bg,
+        color: disabled ? "#94a3b8" : v.color,
         border: v.border,
-        padding: "10px 22px",
-        borderRadius: "999px",
-        fontSize: "15px",
+        padding: "11px 24px",
+        borderRadius: "12px",
+        fontSize: "14px",
         fontWeight: "700",
         cursor: disabled ? "not-allowed" : "pointer",
-        transition: "all 0.2s cubic-bezier(0.16, 1, 0.3, 1)",
-        boxShadow: disabled ? "none" : "0 10px 25px -5px rgba(0, 0, 0, 0.1)",
+        transition: "all 0.25s cubic-bezier(0.16, 1, 0.3, 1)",
+        boxShadow: disabled ? "none" : v.shadow,
         backdropFilter: "blur(12px)",
+        letterSpacing: "0.2px",
         ...style,
       }}
     >
@@ -78,7 +87,15 @@ const Button = ({ children, onClick, disabled, variant = "primary", style = {}, 
 };
 
 const Card = ({ children, style = {} }) => (
-  <div style={{ background: "rgba(255, 255, 255, 0.72)", border: "1px solid rgba(255, 255, 255, 0.85)", borderRadius: "24px", padding: "26px", boxShadow: "0 20px 50px -12px rgba(15, 23, 42, 0.08)", backdropFilter: "blur(24px)", ...style }}>
+  <div style={{
+    background: "rgba(15, 23, 42, 0.75)",
+    border: "1px solid rgba(255, 255, 255, 0.1)",
+    borderRadius: "24px",
+    padding: "28px",
+    boxShadow: "0 20px 50px -10px rgba(0, 0, 0, 0.5)",
+    backdropFilter: "blur(20px)",
+    ...style
+  }}>
     {children}
   </div>
 );
@@ -102,37 +119,40 @@ function Header() {
 
   return (
     <nav style={styles.nav}>
-      <div style={{ display: "flex", alignItems: "center", gap: "24px" }}>
-        <Link to="/" style={{ textDecoration: "none", color: "inherit" }}>
-          <h1 style={styles.logo}>Talent<span style={{ color: "#2563eb" }}>AI</span></h1>
+      <div style={{ display: "flex", alignItems: "center", gap: "28px" }}>
+        <Link to="/" style={{ textDecoration: "none" }}>
+          <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+            <div style={styles.logoPulse} />
+            <h1 style={styles.logo}>Talent<span style={{ color: "#38bdf8" }}>.AI</span></h1>
+          </div>
         </Link>
-        <div style={{ display: "flex", gap: "16px" }}>
+        <div style={{ display: "flex", gap: "18px", alignItems: "center" }}>
           <Link to="/" style={styles.navLink}>Jobs</Link>
-          <Link to="/leaderboard" style={styles.navLink}>Leaderboard 🏆</Link>
           {user?.isCompany && (
-            <Link to="/post-job" style={{ ...styles.navLink, color: "#2563eb", fontWeight: "700" }}>
-              + Post a Job
-            </Link>
+            <>
+              <Link to="/leaderboard" style={styles.navLinkHighlight}>Company Leaderboard 🏆</Link>
+              <Link to="/post-job" style={styles.navLinkAccent}>+ Post Job Position</Link>
+            </>
           )}
         </div>
       </div>
 
-      <div style={{ display: "flex", alignItems: "center", gap: "12px", flexWrap: "wrap" }}>
+      <div style={{ display: "flex", alignItems: "center", gap: "14px" }}>
         {user ? (
-          <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
-            <span style={{ fontSize: "14px", fontWeight: "700", color: "#0f172a" }}>
+          <div style={{ display: "flex", alignItems: "center", gap: "14px" }}>
+            <span style={{ fontSize: "13px", fontWeight: "700", color: "#f8fafc", background: "rgba(255,255,255,0.06)", padding: "6px 14px", borderRadius: "999px", border: "1px solid rgba(255,255,255,0.12)" }}>
               {user.isCompany ? `🏢 ${user.companyName || user.name}` : `👤 ${user.name}`}
             </span>
-            <Button variant="secondary" onClick={handleLogout} style={{ padding: "8px 16px", fontSize: "13px" }}>
+            <Button variant="secondary" onClick={handleLogout} style={{ padding: "8px 16px", fontSize: "12px" }}>
               Logout
             </Button>
           </div>
         ) : (
-          <div style={{ display: "flex", gap: "8px" }}>
-            <Button variant="secondary" onClick={() => navigate("/login")} style={{ padding: "8px 16px", fontSize: "13px" }}>
+          <div style={{ display: "flex", gap: "10px" }}>
+            <Button variant="secondary" onClick={() => navigate("/login")} style={{ padding: "8px 18px", fontSize: "13px" }}>
               Login
             </Button>
-            <Button variant="primary" onClick={() => navigate("/signup")} style={{ padding: "8px 16px", fontSize: "13px" }}>
+            <Button variant="primary" onClick={() => navigate("/signup")} style={{ padding: "8px 18px", fontSize: "13px" }}>
               Sign Up
             </Button>
           </div>
@@ -164,51 +184,63 @@ function HomePage() {
   }, []);
 
   return (
-    <div style={{ ...styles.container, ...styles.homeContainer }}>
+    <div style={styles.container}>
       <div style={styles.homeShell}>
         <Header />
 
         <section style={styles.hero}>
           <div style={styles.heroCopy}>
-            <span style={styles.eyebrow}>AI-Powered Hiring & Screening Platform</span>
-            <h2 style={styles.heroTitle}>Hire top 1% talent with automated, voice-led AI interviews.</h2>
+            <div style={styles.heroBadge}>⚡ Next-Gen Voice AI Screening</div>
+            <h2 style={styles.heroTitle}>Autonomous Voice-Led Technical Screening.</h2>
             <p style={styles.tagline}>
-              Companies post positions with candidate criteria. Candidates complete a 2-minute voice interview with live AI, and rankings appear on the verified candidate leaderboard.
+              Companies configure custom role criteria and AI instructions. Candidates upload resumes and engage in a live split-screen voice interview evaluated in real-time.
             </p>
           </div>
+
           <div style={styles.heroPanel}>
-            <div style={styles.heroMetric}>
+            <div style={styles.metricCard}>
               <span style={styles.metricValue}>{allJobs.length}</span>
-              <span style={styles.metricLabel}>active job postings</span>
+              <span style={styles.metricLabel}>Active Job Listings</span>
             </div>
-            <div style={styles.heroMetric}>
-              <span style={styles.metricValue}>100%</span>
-              <span style={styles.metricLabel}>AI voice screening</span>
+            <div style={styles.metricCard}>
+              <span style={{ ...styles.metricValue, color: "#10b981" }}>Live</span>
+              <span style={styles.metricLabel}>Deepgram Agent Loop</span>
             </div>
           </div>
         </section>
 
         <div style={styles.sectionHeader}>
-          <h3 style={styles.sectionTitle}>Explore Open Positions</h3>
-          <span style={styles.sectionSubtitle}>Select a job to start your instant screening session</span>
+          <h3 style={styles.sectionTitle}>Available Job Positions</h3>
+          <span style={styles.sectionSubtitle}>Select a role to start your AI voice screening</span>
         </div>
 
         <div style={styles.jobGrid}>
           {allJobs.map((job) => (
             <Card key={job.id} style={styles.jobCard}>
-              <div style={{ ...styles.gradientBar, background: job.gradient || "linear-gradient(135deg, #0f172a, #334155)" }} />
-              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
-                <h2 style={styles.jobRole}>{job.role}</h2>
-                <span style={styles.companyBadge}>{job.companyName || job.companyDetails?.name || "Company"}</span>
+              <div style={{ ...styles.cardGlow, background: job.gradient || "linear-gradient(135deg, #3b82f6, #1d4ed8)" }} />
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: "12px" }}>
+                <div>
+                  <h3 style={styles.jobRole}>{job.role}</h3>
+                  <span style={styles.companyNameText}>🏢 {job.companyName || job.companyDetails?.name || "Partner Company"}</span>
+                </div>
+                <span style={styles.liveTag}>AI Ready</span>
               </div>
               <p style={styles.jobDesc}>{job.description}</p>
+
               <div style={styles.reqs}>
                 {(Array.isArray(job.requirements) ? job.requirements : [job.requirements]).map(req => (
                   <span key={req} style={styles.reqBadge}>{req}</span>
                 ))}
               </div>
+
+              {job.extraInstructions && (
+                <div style={styles.aiInstructionSnippet}>
+                  🤖 <b>Custom AI Prompt:</b> "{job.extraInstructions.slice(0, 80)}..."
+                </div>
+              )}
+
               <Button variant="primary" onClick={() => navigate(`/apply/${job.id}`)} style={{ marginTop: "auto", width: '100%' }}>
-                Apply & Take Interview
+                Apply & Take Interview →
               </Button>
             </Card>
           ))}
@@ -244,7 +276,7 @@ function LoginPage() {
 
       localStorage.setItem("user", JSON.stringify(data.user));
       window.dispatchEvent(new Event("storage"));
-      navigate("/");
+      navigate(data.user.isCompany ? "/leaderboard" : "/");
     } catch (err) {
       setError(err.message);
     } finally {
@@ -254,19 +286,19 @@ function LoginPage() {
 
   return (
     <div style={styles.container}>
-      <Button variant="secondary" onClick={() => navigate("/")} style={{ marginBottom: 20 }}>
+      <Button variant="secondary" onClick={() => navigate("/")} style={{ marginBottom: 24 }}>
         ← Back to Home
       </Button>
-      <Card style={styles.centerCard}>
-        <h2 style={styles.title}>Welcome Back</h2>
-        <p style={styles.subtitle}>Enter your credentials to access your TalentAI account.</p>
+      <Card style={styles.authCard}>
+        <h2 style={styles.authTitle}>Account Login</h2>
+        <p style={styles.authSubtitle}>Access your TalentAI candidate or company portal.</p>
         <form onSubmit={handleLogin} style={styles.formBox}>
           <input
             type="email"
             placeholder="Email address"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
-            style={styles.input}
+            style={styles.darkInput}
             required
           />
           <input
@@ -274,16 +306,16 @@ function LoginPage() {
             placeholder="Password"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
-            style={styles.input}
+            style={styles.darkInput}
             required
           />
           {error && <p style={styles.errorText}>{error}</p>}
-          <Button variant="accent" onClick={handleLogin} disabled={loading} style={{ width: "100%", marginTop: "10px" }}>
-            {loading ? "Logging in..." : "Login"}
+          <Button variant="primary" onClick={handleLogin} disabled={loading} style={{ width: "100%", marginTop: "10px" }}>
+            {loading ? "Authenticating..." : "Login"}
           </Button>
         </form>
-        <p style={{ marginTop: "20px", fontSize: "14px", color: "#64748b" }}>
-          Don't have an account? <Link to="/signup" style={{ color: "#2563eb", fontWeight: "bold" }}>Sign up</Link>
+        <p style={{ marginTop: "20px", fontSize: "14px", color: "#94a3b8" }}>
+          Don't have an account? <Link to="/signup" style={{ color: "#38bdf8", fontWeight: "bold" }}>Sign up</Link>
         </p>
       </Card>
     </div>
@@ -338,44 +370,44 @@ function SignupPage() {
 
   return (
     <div style={styles.container}>
-      <Button variant="secondary" onClick={() => navigate("/")} style={{ marginBottom: 20 }}>
+      <Button variant="secondary" onClick={() => navigate("/")} style={{ marginBottom: 24 }}>
         ← Back to Home
       </Button>
-      <Card style={{ ...styles.centerCard, maxWidth: "540px" }}>
-        <h2 style={styles.title}>Create an Account</h2>
-        <p style={styles.subtitle}>Join TalentAI as a candidate or a hiring company.</p>
+      <Card style={{ ...styles.authCard, maxWidth: "560px" }}>
+        <h2 style={styles.authTitle}>Create Account</h2>
+        <p style={styles.authSubtitle}>Join TalentAI to take interviews or recruit top candidates.</p>
 
-        {/* Are you a company selector */}
-        <div style={styles.roleToggleBox}>
-          <span style={{ fontSize: "14px", fontWeight: "700", color: "#0f172a" }}>Are you a company?</span>
-          <label style={styles.toggleLabel}>
-            <input
-              type="checkbox"
-              checked={isCompany}
-              onChange={(e) => setIsCompany(e.target.checked)}
-              style={{ cursor: "pointer", width: "18px", height: "18px" }}
-            />
-            <span style={{ fontSize: "14px", fontWeight: "600", color: "#334155" }}>
-              Yes, I want to post jobs & hire talent
-            </span>
-          </label>
+        <div style={styles.companyToggleCard}>
+          <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+            <span style={{ fontSize: "20px" }}>🏢</span>
+            <div>
+              <h4 style={{ margin: 0, fontSize: "14px", color: "#f8fafc" }}>Are you a hiring company?</h4>
+              <p style={{ margin: "2px 0 0", fontSize: "12px", color: "#94a3b8" }}>Post positions, give custom AI instructions, & view candidate leaderboards.</p>
+            </div>
+          </div>
+          <input
+            type="checkbox"
+            checked={isCompany}
+            onChange={(e) => setIsCompany(e.target.checked)}
+            style={{ width: "20px", height: "20px", cursor: "pointer", accentColor: "#3b82f6" }}
+          />
         </div>
 
         <form onSubmit={handleSignup} style={styles.formBox}>
           <input
             type="text"
-            placeholder={isCompany ? "Contact Person Name" : "Full Name"}
+            placeholder={isCompany ? "Contact Person Name" : "Full Candidate Name"}
             value={name}
             onChange={(e) => setName(e.target.value)}
-            style={styles.input}
+            style={styles.darkInput}
             required
           />
           <input
             type="email"
-            placeholder="Work / Email address"
+            placeholder="Work / Personal Email address"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
-            style={styles.input}
+            style={styles.darkInput}
             required
           />
           <input
@@ -383,37 +415,37 @@ function SignupPage() {
             placeholder="Password (min 6 characters)"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
-            style={styles.input}
+            style={styles.darkInput}
             required
           />
 
           {isCompany && (
-            <div style={{ display: "flex", flexDirection: "column", gap: "12px", background: "rgba(37, 99, 235, 0.05)", padding: "16px", borderRadius: "16px", border: "1px solid rgba(37, 99, 235, 0.15)" }}>
-              <span style={{ fontSize: "13px", fontWeight: "700", color: "#2563eb", textAlign: "left" }}>🏢 Company Profile Details</span>
+            <div style={styles.companyFieldsBox}>
+              <span style={{ fontSize: "13px", fontWeight: "700", color: "#38bdf8" }}>🏢 Company Profile</span>
               <input
                 type="text"
                 placeholder="Company / Organization Name"
                 value={companyName}
                 onChange={(e) => setCompanyName(e.target.value)}
-                style={styles.input}
+                style={styles.darkInput}
                 required
               />
               <textarea
-                placeholder="Brief description of your company & domain..."
+                placeholder="Brief company overview or domain..."
                 value={companyDescription}
                 onChange={(e) => setCompanyDescription(e.target.value)}
-                style={{ ...styles.input, height: "70px", resize: "none" }}
+                style={{ ...styles.darkInput, height: "70px", resize: "none" }}
               />
             </div>
           )}
 
           {error && <p style={styles.errorText}>{error}</p>}
           <Button variant="accent" onClick={handleSignup} disabled={loading} style={{ width: "100%", marginTop: "10px" }}>
-            {loading ? "Creating Account..." : isCompany ? "Sign Up as Hiring Company" : "Sign Up as Candidate"}
+            {loading ? "Registering..." : isCompany ? "Sign Up as Hiring Company" : "Sign Up as Candidate"}
           </Button>
         </form>
-        <p style={{ marginTop: "20px", fontSize: "14px", color: "#64748b" }}>
-          Already have an account? <Link to="/login" style={{ color: "#2563eb", fontWeight: "bold" }}>Login</Link>
+        <p style={{ marginTop: "20px", fontSize: "14px", color: "#94a3b8" }}>
+          Already registered? <Link to="/login" style={{ color: "#38bdf8", fontWeight: "bold" }}>Login</Link>
         </p>
       </Card>
     </div>
@@ -427,6 +459,7 @@ function CompanyJobPage() {
   const [companyName, setCompanyName] = useState(user?.companyName || "");
   const [companyDescription, setCompanyDescription] = useState(user?.companyDescription || "");
   const [requirements, setRequirements] = useState("");
+  const [extraInstructions, setExtraInstructions] = useState("");
   const [notice, setNotice] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
@@ -437,7 +470,7 @@ function CompanyJobPage() {
     setNotice("");
 
     if (!role.trim()) {
-      setError("Please enter a role title.");
+      setError("Please enter a job title.");
       return;
     }
 
@@ -451,13 +484,15 @@ function CompanyJobPage() {
           companyName: companyName || user?.name || "Partner Company",
           companyDescription,
           requirements: requirements.split(",").map(s => s.trim()).filter(Boolean),
+          extraInstructions,
+          companyId: user?.id,
           postedBy: user?.name || "Company"
         }),
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Could not post job.");
 
-      setNotice("Job posted successfully! AI will now use this candidate criteria during interviews.");
+      setNotice("Job position published! The AI Agent is now configured with your custom guidelines.");
       setTimeout(() => navigate("/"), 1500);
     } catch (err) {
       setError(err.message);
@@ -468,24 +503,24 @@ function CompanyJobPage() {
 
   return (
     <div style={styles.container}>
-      <Button variant="secondary" onClick={() => navigate("/")} style={{ marginBottom: 20 }}>
+      <Button variant="secondary" onClick={() => navigate("/")} style={{ marginBottom: 24 }}>
         ← Back to Jobs
       </Button>
-      <Card style={{ ...styles.centerCard, maxWidth: "600px", textAlign: "left" }}>
-        <h2 style={{ ...styles.title, textAlign: "center" }}>Post a Job Position</h2>
-        <p style={{ ...styles.subtitle, textAlign: "center" }}>
-          Define role requirements so the AI Interviewer asks targeted, correlation questions.
+      <Card style={{ ...styles.authCard, maxWidth: "650px", textAlign: "left" }}>
+        <h2 style={{ ...styles.authTitle, textAlign: "center" }}>Post Job Position</h2>
+        <p style={{ ...styles.authSubtitle, textAlign: "center" }}>
+          Define role requirements and specific instructions for the AI Interviewer Agent.
         </p>
 
         <form onSubmit={handleSubmitJob} style={styles.formBox}>
           <div>
-            <label style={styles.fieldLabel}>Job / Role Title *</label>
+            <label style={styles.fieldLabel}>Job Title *</label>
             <input
               type="text"
-              placeholder="e.g. Senior Frontend Engineer"
+              placeholder="e.g. Lead AI Engineer"
               value={role}
               onChange={(e) => setRole(e.target.value)}
-              style={styles.input}
+              style={styles.darkInput}
               required
             />
           </div>
@@ -497,38 +532,40 @@ function CompanyJobPage() {
               placeholder="Company Name"
               value={companyName}
               onChange={(e) => setCompanyName(e.target.value)}
-              style={styles.input}
+              style={styles.darkInput}
             />
           </div>
 
           <div>
-            <label style={styles.fieldLabel}>Company Details / Domain</label>
+            <label style={styles.fieldLabel}>Target Candidate Skills & Criteria (Comma-separated)</label>
             <textarea
-              placeholder="Describe company product, stack, or mission..."
-              value={companyDescription}
-              onChange={(e) => setCompanyDescription(e.target.value)}
-              style={{ ...styles.input, height: "70px", resize: "none" }}
-            />
-          </div>
-
-          <div>
-            <label style={styles.fieldLabel}>Ideal Candidate Criteria & Skills (comma separated)</label>
-            <textarea
-              placeholder="e.g. React, WebSockets, State Management, High-performance UI, 3+ years experience"
+              placeholder="e.g. PyTorch, Distributed Training, WebSockets, CUDA, High-Throughput APIs"
               value={requirements}
               onChange={(e) => setRequirements(e.target.value)}
-              style={{ ...styles.input, height: "80px", resize: "none" }}
+              style={{ ...styles.darkInput, height: "70px", resize: "none" }}
             />
-            <span style={{ fontSize: "12px", color: "#64748b", marginTop: "4px", display: "block" }}>
-              💡 The AI will synthesize these requirements to probe candidates on these exact domains.
+          </div>
+
+          <div>
+            <label style={{ ...styles.fieldLabel, color: "#38bdf8" }}>
+              🤖 Extra Instructions for the AI Interviewer Agent
+            </label>
+            <textarea
+              placeholder="e.g. Ask the candidate how they handle high concurrency in Node.js, probe into their resume's microservices project, test their knowledge on WebSocket heartbeat reconnections."
+              value={extraInstructions}
+              onChange={(e) => setExtraInstructions(e.target.value)}
+              style={{ ...styles.darkInput, height: "100px", resize: "none", border: "1px solid rgba(56, 189, 248, 0.4)" }}
+            />
+            <span style={{ fontSize: "12px", color: "#94a3b8", marginTop: "4px", display: "block" }}>
+              💡 These instructions will be directly injected into the live AI Agent's system prompt during candidate screenings.
             </span>
           </div>
 
           {error && <p style={styles.errorText}>{error}</p>}
           {notice && <p style={styles.successText}>{notice}</p>}
 
-          <Button variant="accent" onClick={handleSubmitJob} disabled={loading} style={{ width: "100%", marginTop: "10px" }}>
-            {loading ? "Posting Job..." : "Publish Job Posting"}
+          <Button variant="accent" onClick={handleSubmitJob} disabled={loading} style={{ width: "100%", marginTop: "12px" }}>
+            {loading ? "Publishing..." : "Publish Job & AI Configuration"}
           </Button>
         </form>
       </Card>
@@ -544,11 +581,10 @@ function UploadPage() {
   const [error, setError] = useState("");
   const [notice, setNotice] = useState("");
   const [resumeSession, setResumeSession] = useState(null);
-
   const [selectedJob, setSelectedJob] = useState(() => DEFAULT_JOBS.find(j => j.id === jobId));
 
   useEffect(() => {
-    async function loadJobDetails() {
+    async function loadJob() {
       if (!selectedJob) {
         try {
           const res = await fetch(`${API_URL}/api/jobs`);
@@ -560,14 +596,14 @@ function UploadPage() {
         }
       }
     }
-    loadJobDetails();
+    loadJob();
   }, [jobId]);
 
   async function uploadResume() {
     setError("");
     setNotice("");
     if (!resumeFile) {
-      setError("Please choose a PDF resume first.");
+      setError("Please select a PDF resume.");
       return;
     }
     const formData = new FormData();
@@ -582,7 +618,7 @@ function UploadPage() {
       const data = await response.json();
       if (!response.ok) throw new Error(data.error || "Could not process resume.");
       setResumeSession(data);
-      setNotice(`Resume processed for ${data.candidateName}. Camera and mic ready.`);
+      setNotice(`Resume verified for ${data.candidateName}. Ready for voice interview.`);
     } catch (err) {
       setError(err.message || "Could not upload resume.");
     } finally {
@@ -592,26 +628,26 @@ function UploadPage() {
 
   return (
     <div style={styles.container}>
-      <Button variant="secondary" onClick={() => navigate("/")} style={{marginBottom: 20}}>← Back to Jobs</Button>
-      <Card style={styles.centerCard}>
-        <h2 style={styles.title}>Apply for {selectedJob?.role || "Position"}</h2>
-        <p style={styles.subtitle}>Upload your PDF resume to start the AI technical voice screening.</p>
-        <div style={styles.uploadBox}>
-          <input type="file" accept="application/pdf" onChange={(e) => setResumeFile(e.target.files[0])} style={styles.fileInput} />
+      <Button variant="secondary" onClick={() => navigate("/")} style={{ marginBottom: 24 }}>← Back to Jobs</Button>
+      <Card style={styles.authCard}>
+        <h2 style={styles.authTitle}>Apply for {selectedJob?.role || "Position"}</h2>
+        <p style={styles.authSubtitle}>Upload your PDF resume to start the AI technical voice screening.</p>
+        <div style={{ display: "flex", flexDirection: "column", gap: "16px", marginBottom: "16px" }}>
+          <input type="file" accept="application/pdf" onChange={(e) => setResumeFile(e.target.files[0])} style={styles.fileUploadInput} />
           <Button variant="accent" onClick={uploadResume} disabled={!resumeFile || uploading}>
-            {uploading ? "Analyzing Resume..." : "Verify & Proceed"}
+            {uploading ? "Parsing Resume PDF..." : "Verify & Prepare AI Interview"}
           </Button>
         </div>
         {error && <p style={styles.errorText}>{error}</p>}
         {notice && <p style={styles.successText}>{notice}</p>}
         {resumeSession && (
-          <div style={styles.readyState}>
-            <p>✅ Resume verified for <strong>{resumeSession.candidateName}</strong></p>
-            <p style={{ fontSize: "13px", color: "#64748b", marginTop: "4px" }}>
-              🎥 Camera & Microphone will record during interview for evaluation export.
+          <div style={styles.verifiedBox}>
+            <p style={{ margin: 0 }}>✅ Candidate Verified: <strong>{resumeSession.candidateName}</strong></p>
+            <p style={{ fontSize: "12px", color: "#94a3b8", marginTop: "4px" }}>
+              🎥 Camera & Microphone stream will be active during the interview.
             </p>
-            <Button variant="primary" onClick={() => navigate(`/interview/${resumeSession.sessionId}`)} style={{marginTop: 16, width: '100%'}}>
-              Enter AI Interview Room
+            <Button variant="primary" onClick={() => navigate(`/interview/${resumeSession.sessionId}`)} style={{ marginTop: 16, width: '100%' }}>
+              Launch AI Interview Room 🚀
             </Button>
           </div>
         )}
@@ -636,10 +672,9 @@ function InterviewPage() {
   const evaluationRef = useRef(null);
 
   const [connected, setConnected] = useState(false);
-  const [events, setEvents] = useState([]);
-  const [error, setError] = useState("");
   const [timeLeft, setTimeLeft] = useState(120);
   const [stopping, setStopping] = useState(false);
+  const [latestSubtitle, setLatestSubtitle] = useState({ speaker: "AI", text: "Initializing AI Interviewer Agent connection..." });
 
   useEffect(() => {
     let timer;
@@ -652,8 +687,6 @@ function InterviewPage() {
   }, [connected, timeLeft]);
 
   async function startInterview() {
-    setEvents([]);
-    setError("");
     setTimeLeft(120);
 
     const wsUrl = `${AGENT_WS_URL}${AGENT_WS_URL.includes("?") ? "&" : "?"}sessionId=${encodeURIComponent(sessionId)}`;
@@ -666,7 +699,7 @@ function InterviewPage() {
         setConnected(true);
         await startMediaCapture();
       } catch (err) {
-        setError(err.message || "Microphone / Camera access denied.");
+        setLatestSubtitle({ speaker: "SYS", text: err.message || "Microphone / Camera access denied." });
         ws.close();
       }
     };
@@ -674,15 +707,19 @@ function InterviewPage() {
     ws.onmessage = async (event) => {
       if (typeof event.data === "string") {
         const msg = safeParseEvent(event.data);
-        setEvents((prev) => [...prev.slice(-15), msg]);
+
+        if (msg.type === "ConversationText" && msg.content) {
+          setLatestSubtitle({
+            speaker: msg.role === "assistant" ? "AI Interviewer" : "You",
+            text: msg.content
+          });
+        }
 
         if (msg.type === "EvaluationSaved") {
           evaluationRef.current = msg;
           await uploadVideoBlob();
           navigate(`/evaluation/${sessionId}`);
         }
-
-        if (msg.type === "Error") setError(msg.message);
       } else {
         playPCM(event.data);
       }
@@ -710,7 +747,7 @@ function InterviewPage() {
         setTimeout(() => fetchEvaluation(sid), 2000);
       }
     } catch (e) {
-      console.error("Fetch evaluation error", e);
+      console.error(e);
     }
   }
 
@@ -722,10 +759,7 @@ function InterviewPage() {
     formData.append("sessionId", sessionId);
 
     try {
-      await fetch(`${API_URL}/api/upload-video`, {
-        method: "POST",
-        body: formData,
-      });
+      await fetch(`${API_URL}/api/upload-video`, { method: "POST", body: formData });
     } catch (err) {
       console.error("Video upload error:", err);
     }
@@ -736,7 +770,6 @@ function InterviewPage() {
   }
 
   async function startMediaCapture() {
-    // Request audio and video with compressed constraints (320x240, 15fps for minimal space)
     const stream = await navigator.mediaDevices.getUserMedia({
       audio: true,
       video: { width: { max: 320 }, height: { max: 240 }, frameRate: { max: 15 } }
@@ -747,12 +780,11 @@ function InterviewPage() {
       videoElementRef.current.srcObject = stream;
     }
 
-    // Low bitrate MediaRecorder to ensure video is saved in least space possible
     try {
       videoChunksRef.current = [];
       const mediaRecorder = new MediaRecorder(stream, {
         mimeType: 'video/webm;codecs=vp8,opus',
-        videoBitsPerSecond: 100000 // ~100 kbps for ultra lightweight video footprint
+        videoBitsPerSecond: 100000 // ultra lightweight footprint
       });
       mediaRecorder.ondataavailable = (e) => {
         if (e.data.size > 0) videoChunksRef.current.push(e.data);
@@ -760,10 +792,9 @@ function InterviewPage() {
       mediaRecorder.start(1000);
       mediaRecorderRef.current = mediaRecorder;
     } catch (e) {
-      console.warn("Low bitrate media recorder fallback", e);
+      console.warn("Fallback recorder", e);
     }
 
-    // Audio context for raw PCM sending
     const audioCtx = new AudioContext({ sampleRate: 16000 });
     audioCtxRef.current = audioCtx;
     const source = audioCtx.createMediaStreamSource(stream);
@@ -829,64 +860,47 @@ function InterviewPage() {
   }, []);
 
   return (
-    <div style={styles.container}>
-      <Card style={styles.interviewCard}>
-        <div style={styles.statusHeader}>
-          <div style={styles.statusDot}>
-            <span style={styles.dot} />
-            <span>LIVE INTERVIEW: {timeLeft > 0 ? `${Math.floor(timeLeft / 60)}:${(timeLeft % 60).toString().padStart(2, '0')}` : '0:00'}</span>
+    <div style={styles.fullscreenInterviewContainer}>
+      {/* Top Floating Control Bar */}
+      <div style={styles.interviewTopBar}>
+        <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
+          <span style={styles.liveRecordingDot} />
+          <span style={{ fontSize: "14px", fontWeight: "800", color: "#f8fafc", letterSpacing: "0.5px" }}>
+            LIVE INTERVIEW &nbsp;|&nbsp; TIME LEFT: {Math.floor(timeLeft / 60)}:{(timeLeft % 60).toString().padStart(2, '0')}
+          </span>
+        </div>
+        <Button variant="danger" onClick={stopInterview} disabled={stopping} style={{ padding: "8px 20px" }}>
+          {stopping ? "Calculating Evaluation..." : "End Interview"}
+        </Button>
+      </div>
+
+      {/* 50/50 Split Screen Stage */}
+      <div style={styles.splitStage}>
+        {/* Left 50%: AI Agent Avatar GIF */}
+        <div style={styles.agentScreen}>
+          <div style={styles.agentAvatarContainer}>
+            <img src={AI_AGENT_GIF} alt="AI Agent" style={styles.agentGifImage} />
+            <div style={styles.agentAudioGlow} />
           </div>
-          <Button variant="danger" onClick={stopInterview} disabled={stopping}>
-            {stopping ? "Processing Video & Scoring..." : "End Interview"}
-          </Button>
+          <span style={styles.screenLabel}>🤖 AI Technical Interviewer Agent</span>
         </div>
 
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 180px", gap: "20px", alignItems: "center", margin: "20px 0" }}>
-          <div style={styles.visualizer}>
-            <div style={styles.aiAvatar}>
-              <div style={styles.pulseRing} />
-              <div style={styles.aiCore} />
-            </div>
-            <h3 style={styles.visualizerText}>{stopping ? "Calculating evaluation..." : "AI Interviewer is speaking..."}</h3>
-          </div>
-
-          <div style={{ position: "relative", width: "180px", height: "135px", borderRadius: "16px", overflow: "hidden", background: "#000", border: "2px solid #2563eb" }}>
-            <video ref={videoElementRef} autoPlay muted playsInline style={{ width: "100%", height: "100%", objectFit: "cover" }} />
-            <span style={{ position: "absolute", bottom: "6px", left: "6px", background: "rgba(0,0,0,0.6)", color: "#fff", fontSize: "10px", padding: "2px 6px", borderRadius: "4px" }}>
-              REC 🔴 320p
-            </span>
-          </div>
+        {/* Right 50%: Live Candidate Camera */}
+        <div style={styles.candidateScreen}>
+          <video ref={videoElementRef} autoPlay muted playsInline style={styles.candidateVideoFeed} />
+          <span style={styles.screenLabel}>👤 You (Candidate Camera)</span>
         </div>
+      </div>
 
-        <div style={styles.logBox}>
-          {events.length > 0 ? (
-            events.map((e, i) => {
-              let msg = "System";
-              let role = "SYS";
-              if (typeof e === 'object') {
-                if (e.type === 'ConversationText') {
-                  msg = e.content;
-                  role = e.role === 'assistant' ? 'AI' : 'YOU';
-                } else {
-                  msg = JSON.stringify(e);
-                  role = 'EVENT';
-                }
-              } else {
-                msg = e;
-              }
-              return (
-                <div key={i} style={styles.logEntry}>
-                  <span style={styles.logTimestamp}>{new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit', second:'2-digit'})}</span>
-                  <span style={styles.logRole}>[{role}]</span>
-                  <span style={styles.logMsg}>{msg}</span>
-                </div>
-              );
-            })
-          ) : (
-            <p style={styles.emptyLog}>Initializing AI Interviewer connection...</p>
-          )}
+      {/* Netflix-Style Floating Subtitle Box at Bottom Center */}
+      <div style={styles.netflixSubtitleContainer}>
+        <div style={styles.netflixSubtitleBox}>
+          <span style={{ color: latestSubtitle.speaker === "You" ? "#38bdf8" : "#10b981", fontWeight: "800", marginRight: "8px" }}>
+            [{latestSubtitle.speaker}]
+          </span>
+          <span>{latestSubtitle.text}</span>
         </div>
-      </Card>
+      </div>
     </div>
   );
 }
@@ -894,6 +908,7 @@ function InterviewPage() {
 function EvaluationPage() {
   const { sessionId } = useParams();
   const navigate = useNavigate();
+  const user = getStoredUser();
   const [evaluation, setEvaluation] = useState(null);
   const [loading, setLoading] = useState(true);
 
@@ -923,58 +938,48 @@ function EvaluationPage() {
     };
   }, [sessionId]);
 
-  if (loading || !evaluation) return <div style={styles.container}>Preparing your interview evaluation...</div>;
+  if (loading || !evaluation) return <div style={styles.container}>Evaluating your technical interview...</div>;
 
   return (
     <div style={styles.container}>
-      <Card style={{ ...styles.centerCard, maxWidth: "680px" }}>
+      <Card style={{ ...styles.authCard, maxWidth: "700px" }}>
         <div style={styles.scoreCircle}>
           <span style={styles.scoreValue}>{evaluation?.score || 0}</span>
           <span style={styles.scoreMax}>/ 100</span>
         </div>
-        <h2 style={styles.title}>Interview Result</h2>
-        <div style={styles.evalDetails}>
-          <div style={styles.evalItem}><strong>Questions Answered:</strong> {evaluation.questionsAnswered}/5</div>
-          <div style={styles.evalItem}><strong>Status:</strong> Evaluated</div>
-        </div>
-        {evaluation.summary && <p style={styles.notesText}>{evaluation.summary}</p>}
+
+        <h2 style={{ fontSize: "28px", fontWeight: "800", color: "#f8fafc", margin: "0 0 6px" }}>Interview Evaluation Complete</h2>
+        <p style={{ color: "#94a3b8", fontSize: "14px", margin: "0 0 20px" }}>Overall candidate performance & score summary</p>
+
+        {evaluation.summary && <p style={styles.evalSummaryText}>{evaluation.summary}</p>}
 
         {evaluation.videoUrl && (
-          <div style={{ marginTop: "20px", textAlign: "center" }}>
-            <h4 style={{ fontSize: "14px", color: "#0f172a", marginBottom: "8px" }}>Recorded Interview Video</h4>
-            <video src={`${API_URL}${evaluation.videoUrl}`} controls style={{ width: "100%", maxWidth: "360px", borderRadius: "12px", border: "1px solid #cbd5e1" }} />
+          <div style={{ margin: "20px 0", textAlign: "center" }}>
+            <h4 style={{ fontSize: "13px", color: "#38bdf8", marginBottom: "8px" }}>📹 Interview Video Recording</h4>
+            <video src={`${API_URL}${evaluation.videoUrl}`} controls style={{ width: "100%", maxWidth: "380px", borderRadius: "16px", border: "1px solid rgba(255,255,255,0.12)" }} />
           </div>
         )}
 
         {evaluation.scoreBreakdown && (
-          <div style={styles.breakdown}>
+          <div style={styles.breakdownBox}>
             {Object.entries(evaluation.scoreBreakdown).map(([label, value]) => (
               <div key={label} style={styles.breakdownRow}>
-                <span>{formatScoreLabel(label)}</span>
-                <span style={styles.breakdownValue}>{value}</span>
+                <span>{label.replace(/([A-Z])/g, " $1").replace(/^./, str => str.toUpperCase())}</span>
+                <span style={{ color: "#38bdf8", fontWeight: "800" }}>{value}</span>
               </div>
             ))}
           </div>
         )}
 
-        <div style={styles.feedbackGrid}>
-          <div style={styles.feedbackBlock}>
-            <strong style={{ color: "#16a34a" }}>Key Strengths</strong>
-            {evaluation.strengths?.map((item) => <p key={item}>• {item}</p>)}
-          </div>
-          <div style={styles.feedbackBlock}>
-            <strong style={{ color: "#dc2626" }}>Areas to Focus</strong>
-            {evaluation.weaknesses?.map((item) => <p key={item}>• {item}</p>)}
-          </div>
-        </div>
-
-        <div style={{ display: "flex", gap: "12px", marginTop: "30px" }}>
+        <div style={{ display: "flex", gap: "14px", marginTop: "28px" }}>
           <Button variant="secondary" onClick={() => navigate("/")} style={{ flex: 1 }}>
-            Return Home
+            Return to Home
           </Button>
-          <Button variant="accent" onClick={() => navigate("/leaderboard")} style={{ flex: 1 }}>
-            View Leaderboard 🏆
-          </Button>
+          {user?.isCompany && (
+            <Button variant="accent" onClick={() => navigate("/leaderboard")} style={{ flex: 1 }}>
+              View Leaderboard 🏆
+            </Button>
+          )}
         </div>
       </Card>
     </div>
@@ -983,117 +988,125 @@ function EvaluationPage() {
 
 function LeaderboardPage() {
   const navigate = useNavigate();
+  const user = getStoredUser();
   const [leaderboard, setLeaderboard] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [order, setOrder] = useState("asc"); // Default ascending order as requested
+  const [error, setError] = useState("");
   const [selectedCandidate, setSelectedCandidate] = useState(null);
 
   useEffect(() => {
     async function fetchLeaderboard() {
+      if (!user?.isCompany) {
+        setError("Access Restricted: Only verified company accounts can view candidate evaluation records.");
+        setLoading(false);
+        return;
+      }
       try {
         setLoading(true);
-        const res = await fetch(`${API_URL}/api/leaderboard?order=${order}`);
+        const res = await fetch(`${API_URL}/api/leaderboard?userEmail=${encodeURIComponent(user.email)}`);
         const data = await res.json();
+        if (!res.ok) throw new Error(data.error || "Could not fetch leaderboard.");
         setLeaderboard(data?.leaderboard || []);
       } catch (e) {
-        console.error("Leaderboard fetch error", e);
+        setError(e.message);
       } finally {
         setLoading(false);
       }
     }
     fetchLeaderboard();
-  }, [order]);
+  }, [user]);
+
+  if (!user?.isCompany) {
+    return (
+      <div style={styles.container}>
+        <Card style={{ ...styles.authCard, textAlign: "center", padding: "50px 20px" }}>
+          <span style={{ fontSize: "40px" }}>🔒</span>
+          <h2 style={{ color: "#f8fafc", fontSize: "24px", margin: "16px 0 8px" }}>Restricted Company Leaderboard</h2>
+          <p style={{ color: "#94a3b8", fontSize: "14px", margin: "0 0 24px" }}>
+            The candidate evaluation leaderboard is exclusively accessible to registered hiring company accounts.
+          </p>
+          <Button variant="primary" onClick={() => navigate("/")}>
+            Return to Home
+          </Button>
+        </Card>
+      </div>
+    );
+  }
 
   return (
-    <div style={{ ...styles.container, ...styles.homeContainer }}>
+    <div style={styles.container}>
       <div style={styles.homeShell}>
         <Header />
 
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "28px" }}>
           <div>
-            <h2 style={{ fontSize: "32px", fontWeight: "800", color: "#0f172a", margin: 0 }}>
-              Candidate Evaluation Leaderboard 🏆
+            <h2 style={{ fontSize: "32px", fontWeight: "800", color: "#f8fafc", margin: 0 }}>
+              Company Candidate Leaderboard 🏆
             </h2>
-            <p style={{ color: "#64748b", margin: "6px 0 0" }}>
-              Candidates who completed the AI interview sorted by evaluation score.
+            <p style={{ color: "#94a3b8", margin: "6px 0 0" }}>
+              Evaluation results & interview recordings for <strong>{user.companyName || user.name}</strong> candidates.
             </p>
-          </div>
-
-          <div style={{ display: "flex", gap: "8px", alignItems: "center", background: "rgba(255,255,255,0.7)", padding: "6px 12px", borderRadius: "999px", border: "1px solid rgba(0,0,0,0.1)" }}>
-            <span style={{ fontSize: "13px", fontWeight: "600", color: "#334155" }}>Sort Order:</span>
-            <Button
-              variant={order === "asc" ? "primary" : "secondary"}
-              onClick={() => setOrder("asc")}
-              style={{ padding: "4px 12px", fontSize: "12px" }}
-            >
-              Ascending Marks ↑
-            </Button>
-            <Button
-              variant={order === "desc" ? "primary" : "secondary"}
-              onClick={() => setOrder("desc")}
-              style={{ padding: "4px 12px", fontSize: "12px" }}
-            >
-              Descending Marks ↓
-            </Button>
           </div>
         </div>
 
         {loading ? (
-          <p style={{ textAlign: "center", padding: "40px", color: "#64748b" }}>Loading candidate evaluation records...</p>
+          <p style={{ textAlign: "center", color: "#94a3b8", padding: "40px" }}>Loading candidate evaluations...</p>
+        ) : error ? (
+          <Card style={{ textAlign: "center", padding: "40px" }}><p style={{ color: "#ef4444" }}>{error}</p></Card>
         ) : leaderboard.length === 0 ? (
           <Card style={{ textAlign: "center", padding: "60px 20px" }}>
-            <h3 style={{ fontSize: "20px", color: "#0f172a", margin: "0 0 10px" }}>No Candidate Interviews Recorded Yet</h3>
-            <p style={{ color: "#64748b", margin: 0 }}>Apply for a position and complete an interview to appear on the leaderboard!</p>
+            <h3 style={{ color: "#f8fafc", margin: "0 0 10px" }}>No Candidate Interviews Recorded Yet</h3>
+            <p style={{ color: "#94a3b8", margin: 0 }}>Post a position and have candidates complete an interview to view evaluations.</p>
           </Card>
         ) : (
           <div style={{ display: "grid", gap: "16px" }}>
             {leaderboard.map((item, index) => (
-              <Card key={item.sessionId} style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
+              <Card key={item.sessionId || index} style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "12px" }}>
                   <div style={{ display: "flex", alignItems: "center", gap: "16px" }}>
-                    <div style={{ background: "#0f172a", color: "#fff", width: "36px", height: "36px", borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center", fontWeight: "800", fontSize: "15px" }}>
+                    <div style={{ background: "linear-gradient(135deg, #3b82f6, #1d4ed8)", color: "#fff", width: "38px", height: "38px", borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center", fontWeight: "800", fontSize: "15px" }}>
                       #{index + 1}
                     </div>
                     <div>
-                      <h3 style={{ margin: 0, fontSize: "18px", fontWeight: "800", color: "#0f172a" }}>{item.candidateName}</h3>
-                      <span style={{ fontSize: "13px", color: "#64748b" }}>Role: <strong>{item.jobRole}</strong></span>
+                      <h3 style={{ margin: 0, fontSize: "18px", fontWeight: "800", color: "#f8fafc" }}>{item.candidateName}</h3>
+                      <span style={{ fontSize: "13px", color: "#94a3b8" }}>Role: <strong>{item.jobRole}</strong></span>
                     </div>
                   </div>
 
                   <div style={{ display: "flex", alignItems: "center", gap: "20px" }}>
                     <div style={{ textAlign: "right" }}>
-                      <span style={{ fontSize: "24px", fontWeight: "850", color: "#2563eb" }}>{item.score}</span>
-                      <span style={{ fontSize: "12px", color: "#64748b" }}> / 100 Marks</span>
+                      <span style={{ fontSize: "24px", fontWeight: "900", color: "#10b981" }}>{item.score}</span>
+                      <span style={{ fontSize: "12px", color: "#94a3b8" }}> / 100 Marks</span>
                     </div>
                     <Button
                       variant="secondary"
                       onClick={() => setSelectedCandidate(selectedCandidate?.sessionId === item.sessionId ? null : item)}
                       style={{ padding: "8px 16px", fontSize: "13px" }}
                     >
-                      {selectedCandidate?.sessionId === item.sessionId ? "Hide Details" : "View Candidate Data & Video"}
+                      {selectedCandidate?.sessionId === item.sessionId ? "Hide Data" : "View Candidate Data & Video"}
                     </Button>
                   </div>
                 </div>
 
                 {selectedCandidate?.sessionId === item.sessionId && (
-                  <div style={{ marginTop: "16px", paddingTop: "16px", borderTop: "1px solid rgba(0,0,0,0.1)", display: "grid", gridTemplateColumns: "1fr 280px", gap: "24px" }}>
+                  <div style={{ marginTop: "16px", paddingTop: "16px", borderTop: "1px solid rgba(255,255,255,0.1)", display: "grid", gridTemplateColumns: "1fr 280px", gap: "24px" }}>
                     <div>
-                      <h4 style={{ margin: "0 0 8px", fontSize: "14px", color: "#0f172a" }}>Evaluation Summary & Notes</h4>
-                      <p style={{ fontSize: "14px", color: "#475569", lineHeight: "1.6" }}>{item.summary || "Evaluation score generated automatically."}</p>
+                      <h4 style={{ margin: "0 0 8px", fontSize: "14px", color: "#38bdf8" }}>Evaluation Notes & Feedback</h4>
+                      <p style={{ fontSize: "14px", color: "#cbd5e1", lineHeight: "1.6" }}>{item.summary || "Automated evaluation completed."}</p>
 
-                      <h4 style={{ margin: "16px 0 8px", fontSize: "14px", color: "#0f172a" }}>Interview Transcript & Log</h4>
-                      <div style={{ background: "#0f172a", color: "#f8fafc", padding: "14px", borderRadius: "12px", maxHeight: "180px", overflowY: "auto", fontSize: "12px", fontFamily: "monospace" }}>
-                        {item.transcript || "No readable transcript text."}
+                      <h4 style={{ margin: "16px 0 8px", fontSize: "14px", color: "#38bdf8" }}>Full Transcript</h4>
+                      <div style={{ background: "#020617", color: "#f8fafc", padding: "14px", borderRadius: "12px", maxHeight: "180px", overflowY: "auto", fontSize: "12px", fontFamily: "monospace", border: "1px solid rgba(255,255,255,0.1)" }}>
+                        {item.transcript || "No transcript recorded."}
                       </div>
                     </div>
 
                     <div style={{ textAlign: "center" }}>
-                      <h4 style={{ margin: "0 0 8px", fontSize: "14px", color: "#0f172a" }}>Recorded Video</h4>
+                      <h4 style={{ margin: "0 0 8px", fontSize: "14px", color: "#38bdf8" }}>Recorded Interview Video</h4>
                       {item.videoUrl ? (
-                        <video src={`${API_URL}${item.videoUrl}`} controls style={{ width: "100%", borderRadius: "12px", border: "1px solid #cbd5e1", background: "#000" }} />
+                        <video src={`${API_URL}${item.videoUrl}`} controls style={{ width: "100%", borderRadius: "12px", border: "1px solid rgba(255,255,255,0.12)", background: "#000" }} />
                       ) : (
-                        <div style={{ background: "#f1f5f9", padding: "30px 10px", borderRadius: "12px", color: "#94a3b8", fontSize: "12px" }}>
-                          No Video Recording Available
+                        <div style={{ background: "rgba(255,255,255,0.04)", padding: "30px 10px", borderRadius: "12px", color: "#64748b", fontSize: "12px" }}>
+                          No Video Recording Saved
                         </div>
                       )}
                     </div>
@@ -1106,10 +1119,6 @@ function LeaderboardPage() {
       </div>
     </div>
   );
-}
-
-function formatScoreLabel(label) {
-  return label.replace(/([A-Z])/g, " $1").replace(/^./, (character) => character.toUpperCase());
 }
 
 export default function App() {
@@ -1132,20 +1141,15 @@ export default function App() {
 const styles = {
   container: {
     minHeight: "100vh",
-    background: "#f8fafc",
-    color: "#0f172a",
+    background: "#020617", // Ultra sleek dark theme
+    color: "#f8fafc",
     fontFamily: "'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif",
     display: "flex",
     flexDirection: "column",
     alignItems: "center",
     justifyContent: "center",
     padding: "36px 20px",
-  },
-  homeContainer: {
-    background:
-      "radial-gradient(circle at 10% 10%, rgba(37, 99, 235, 0.05), transparent 30%), radial-gradient(circle at 90% 90%, rgba(15, 23, 42, 0.04), transparent 30%), linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%)",
-    alignItems: "stretch",
-    justifyContent: "flex-start",
+    backgroundImage: "radial-gradient(circle at 50% 0%, rgba(56, 189, 248, 0.08), transparent 50%), radial-gradient(circle at 100% 100%, rgba(16, 185, 129, 0.05), transparent 50%)",
   },
   homeShell: { width: "100%", maxWidth: "1140px", margin: "0 auto" },
   nav: {
@@ -1157,14 +1161,11 @@ const styles = {
     flexWrap: "wrap",
     gap: "16px",
   },
-  navLink: {
-    color: "#334155",
-    textDecoration: "none",
-    fontSize: "14px",
-    fontWeight: "600",
-    transition: "color 0.2s ease",
-  },
-  logo: { fontSize: "28px", fontWeight: "900", margin: 0, letterSpacing: "-0.5px", color: "#0f172a" },
+  logoPulse: { width: "12px", height: "12px", background: "#38bdf8", borderRadius: "50%", boxShadow: "0 0 12px #38bdf8" },
+  logo: { fontSize: "26px", fontWeight: "900", margin: 0, letterSpacing: "-0.5px", color: "#f8fafc" },
+  navLink: { color: "#94a3b8", textDecoration: "none", fontSize: "14px", fontWeight: "600", transition: "color 0.2s ease" },
+  navLinkHighlight: { color: "#f59e0b", textDecoration: "none", fontSize: "14px", fontWeight: "700" },
+  navLinkAccent: { color: "#38bdf8", textDecoration: "none", fontSize: "14px", fontWeight: "700" },
   hero: {
     display: "grid",
     gridTemplateColumns: "repeat(auto-fit, minmax(300px, 1fr))",
@@ -1173,116 +1174,67 @@ const styles = {
     marginBottom: "40px",
   },
   heroCopy: {
-    background: "rgba(255, 255, 255, 0.8)",
-    border: "1px solid rgba(255, 255, 255, 0.9)",
+    background: "rgba(15, 23, 42, 0.75)",
+    border: "1px solid rgba(255, 255, 255, 0.1)",
     borderRadius: "28px",
     padding: "36px",
-    boxShadow: "0 20px 40px -15px rgba(15, 23, 42, 0.05)",
+    boxShadow: "0 20px 40px rgba(0, 0, 0, 0.5)",
     backdropFilter: "blur(20px)",
   },
-  eyebrow: {
-    color: "#2563eb",
-    fontSize: "12px",
-    fontWeight: "800",
-    textTransform: "uppercase",
-    letterSpacing: "0.5px",
-  },
-  heroTitle: {
-    maxWidth: "760px",
-    fontSize: "38px",
-    lineHeight: "1.12",
-    fontWeight: "850",
-    margin: "14px 0 16px",
-    color: "#0f172a",
-    letterSpacing: "-0.5px",
-  },
-  tagline: { color: "#475569", fontSize: "16px", lineHeight: "1.65", margin: 0 },
+  heroBadge: { display: "inline-block", background: "rgba(56, 189, 248, 0.12)", color: "#38bdf8", fontSize: "12px", fontWeight: "800", padding: "6px 14px", borderRadius: "999px", marginBottom: "14px", border: "1px solid rgba(56, 189, 248, 0.25)" },
+  heroTitle: { fontSize: "36px", lineHeight: "1.15", fontWeight: "900", color: "#f8fafc", margin: "0 0 16px", letterSpacing: "-0.5px" },
+  tagline: { color: "#94a3b8", fontSize: "15px", lineHeight: "1.65", margin: 0 },
   heroPanel: { display: "grid", gap: "16px" },
-  heroMetric: {
-    display: "flex",
-    flexDirection: "column",
-    justifyContent: "center",
-    background: "rgba(255, 255, 255, 0.75)",
-    border: "1px solid rgba(255, 255, 255, 0.9)",
-    borderRadius: "24px",
-    padding: "26px",
-    boxShadow: "0 15px 30px -10px rgba(15, 23, 42, 0.04)",
-  },
-  metricValue: { color: "#0f172a", fontSize: "40px", lineHeight: 1, fontWeight: "850" },
-  metricLabel: { color: "#64748b", fontSize: "13px", fontWeight: "700", marginTop: "6px" },
+  metricCard: { display: "flex", flexDirection: "column", justifyContent: "center", background: "rgba(15, 23, 42, 0.75)", border: "1px solid rgba(255, 255, 255, 0.1)", borderRadius: "24px", padding: "26px", boxShadow: "0 15px 30px rgba(0, 0, 0, 0.4)" },
+  metricValue: { fontSize: "38px", fontWeight: "900", color: "#f8fafc" },
+  metricLabel: { fontSize: "13px", fontWeight: "700", color: "#64748b", marginTop: "6px" },
   sectionHeader: { marginBottom: "20px" },
-  sectionTitle: { fontSize: "22px", fontWeight: "800", color: "#0f172a", margin: 0 },
-  sectionSubtitle: { fontSize: "14px", color: "#64748b", margin: "4px 0 0" },
+  sectionTitle: { fontSize: "22px", fontWeight: "800", color: "#f8fafc", margin: 0 },
+  sectionSubtitle: { fontSize: "14px", color: "#94a3b8", margin: "4px 0 0" },
   jobGrid: { display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(320px, 1fr))", gap: "20px", width: "100%" },
-  jobCard: {
-    position: "relative",
-    overflow: "hidden",
-    minHeight: "280px",
-    display: "flex",
-    flexDirection: "column",
-  },
-  gradientBar: { height: "5px", width: "100%", position: "absolute", top: 0, left: 0, opacity: 0.9 },
-  jobRole: { color: "#0f172a", fontSize: "22px", fontWeight: "800", margin: "10px 0 4px 0" },
-  companyBadge: { background: "#e2e8f0", color: "#334155", fontSize: "11px", fontWeight: "700", padding: "4px 10px", borderRadius: "999px" },
-  jobDesc: { color: "#475569", fontSize: "14px", lineHeight: "1.6", marginBottom: "18px" },
-  reqs: { display: "flex", flexWrap: "wrap", gap: "6px", marginBottom: "20px" },
-  reqBadge: { background: "rgba(241, 245, 249, 0.9)", border: "1px solid #cbd5e1", padding: "5px 10px", borderRadius: "999px", fontSize: "12px", color: "#334155", fontWeight: "600" },
-  centerCard: { maxWidth: "480px", width: "100%", textAlign: "center" },
-  title: { fontSize: "28px", fontWeight: "850", color: "#0f172a", marginBottom: "6px" },
-  subtitle: { color: "#64748b", fontSize: "14px", marginBottom: "24px" },
+  jobCard: { position: "relative", overflow: "hidden", minHeight: "300px", display: "flex", flexDirection: "column" },
+  cardGlow: { height: "4px", width: "100%", position: "absolute", top: 0, left: 0 },
+  jobRole: { fontSize: "20px", fontWeight: "800", color: "#f8fafc", margin: 0 },
+  companyNameText: { fontSize: "12px", color: "#38bdf8", fontWeight: "700", marginTop: "4px", display: "block" },
+  liveTag: { background: "rgba(16, 185, 129, 0.15)", color: "#10b981", fontSize: "11px", fontWeight: "800", padding: "4px 10px", borderRadius: "999px", border: "1px solid rgba(16, 185, 129, 0.3)" },
+  jobDesc: { color: "#cbd5e1", fontSize: "14px", lineHeight: "1.6", margin: "14px 0" },
+  reqs: { display: "flex", flexWrap: "wrap", gap: "6px", marginBottom: "16px" },
+  reqBadge: { background: "rgba(255, 255, 255, 0.05)", border: "1px solid rgba(255, 255, 255, 0.1)", padding: "4px 10px", borderRadius: "999px", fontSize: "12px", color: "#cbd5e1", fontWeight: "600" },
+  aiInstructionSnippet: { background: "rgba(56, 189, 248, 0.08)", border: "1px solid rgba(56, 189, 248, 0.2)", padding: "10px", borderRadius: "12px", fontSize: "12px", color: "#38bdf8", marginBottom: "18px" },
+  authCard: { maxWidth: "480px", width: "100%", textAlign: "center" },
+  authTitle: { fontSize: "28px", fontWeight: "850", color: "#f8fafc", margin: "0 0 6px" },
+  authSubtitle: { color: "#94a3b8", fontSize: "14px", marginBottom: "24px" },
   formBox: { display: "flex", flexDirection: "column", gap: "14px", margin: "16px 0" },
-  fieldLabel: { display: "block", fontSize: "13px", fontWeight: "700", color: "#334155", marginBottom: "6px", textAlign: "left" },
-  input: {
-    width: "100%",
-    padding: "12px 16px",
-    borderRadius: "12px",
-    border: "1px solid #cbd5e1",
-    background: "#ffffff",
-    fontSize: "14px",
-    color: "#0f172a",
-    outline: "none",
-    boxSizing: "border-box",
-  },
-  roleToggleBox: {
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "space-between",
-    background: "#f1f5f9",
-    padding: "14px",
-    borderRadius: "14px",
-    marginBottom: "16px",
-    border: "1px solid #e2e8f0",
-  },
-  toggleLabel: { display: "flex", alignItems: "center", gap: "8px", cursor: "pointer" },
-  uploadBox: { display: "flex", flexDirection: "column", gap: "16px", marginBottom: "16px" },
-  fileInput: { background: "#ffffff", border: "2px dashed #cbd5e1", padding: "20px", borderRadius: "16px", color: "#0f172a", cursor: "pointer" },
-  errorText: { color: "#dc2626", fontSize: "13px", marginTop: "4px" },
-  successText: { color: "#16a34a", fontSize: "13px", marginTop: "4px", fontWeight: "600" },
-  readyState: { marginTop: "20px", padding: "16px", background: "#f0fdf4", borderRadius: "16px", border: "1px solid #bbf7d0" },
-  interviewCard: { width: "100%", maxWidth: "860px", display: "flex", flexDirection: "column" },
-  statusHeader: { display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "20px" },
-  statusDot: { display: "flex", alignItems: "center", gap: "8px", fontSize: "13px", fontWeight: "700", color: "#0f172a" },
-  dot: { width: "10px", height: "10px", background: "#dc2626", borderRadius: "50%", boxShadow: "0 0 10px #dc2626" },
-  visualizer: { display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: "40px 0" },
-  aiAvatar: { position: "relative", width: "100px", height: "100px", display: "flex", justifyContent: "center", alignItems: "center" },
-  aiCore: { width: "50px", height: "50px", background: "linear-gradient(135deg, #0f172a, #2563eb)", borderRadius: "50%", zIndex: 2, boxShadow: "0 0 25px rgba(37, 99, 235, 0.4)" },
-  pulseRing: { position: "absolute", width: "100%", height: "100%", border: "2px solid #2563eb", borderRadius: "50%", animation: "pulse 2s infinite" },
-  visualizerText: { marginTop: "24px", fontSize: "18px", fontWeight: "600", color: "#475569" },
-  logBox: { background: "#0f172a", padding: "16px", borderRadius: "14px", height: "180px", overflowY: "auto", fontSize: "12px", fontFamily: "monospace", border: "1px solid #1e293b" },
-  logEntry: { display: "flex", gap: "8px", marginBottom: "6px" },
-  logTimestamp: { color: "#64748b" },
-  logRole: { color: "#38bdf8", fontWeight: "bold" },
-  logMsg: { color: "#f8fafc" },
-  emptyLog: { color: "#64748b", textAlign: "center", marginTop: "70px" },
-  scoreCircle: { width: "130px", height: "130px", borderRadius: "50%", border: "6px solid #2563eb", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", margin: "0 auto 20px", boxShadow: "0 0 25px rgba(37, 99, 235, 0.2)" },
-  scoreValue: { fontSize: "42px", fontWeight: "900", color: "#0f172a" },
+  fieldLabel: { display: "block", fontSize: "13px", fontWeight: "700", color: "#cbd5e1", marginBottom: "6px", textAlign: "left" },
+  darkInput: { width: "100%", padding: "12px 16px", borderRadius: "12px", border: "1px solid rgba(255, 255, 255, 0.12)", background: "#090d16", fontSize: "14px", color: "#f8fafc", outline: "none", boxSizing: "border-box" },
+  companyToggleCard: { display: "flex", alignItems: "center", justifyContent: "space-between", background: "rgba(255,255,255,0.04)", padding: "14px", borderRadius: "16px", border: "1px solid rgba(255,255,255,0.08)", marginBottom: "16px", textAlign: "left" },
+  companyFieldsBox: { display: "flex", flexDirection: "column", gap: "12px", background: "rgba(56, 189, 248, 0.05)", padding: "16px", borderRadius: "16px", border: "1px solid rgba(56, 189, 248, 0.2)" },
+  fileUploadInput: { background: "#090d16", border: "2px dashed rgba(255,255,255,0.2)", padding: "20px", borderRadius: "16px", color: "#f8fafc", cursor: "pointer" },
+  errorText: { color: "#ef4444", fontSize: "13px", marginTop: "4px" },
+  successText: { color: "#10b981", fontSize: "13px", marginTop: "4px", fontWeight: "600" },
+  verifiedBox: { marginTop: "20px", padding: "16px", background: "rgba(16, 185, 129, 0.1)", borderRadius: "16px", border: "1px solid rgba(16, 185, 129, 0.3)" },
+
+  // Fullscreen Split Interview Layout
+  fullscreenInterviewContainer: { position: "fixed", top: 0, left: 0, right: 0, bottom: 0, background: "#020617", zIndex: 9999, display: "flex", flexDirection: "column" },
+  interviewTopBar: { padding: "16px 32px", display: "flex", justifyContent: "space-between", alignItems: "center", background: "rgba(15, 23, 42, 0.9)", borderBottom: "1px solid rgba(255, 255, 255, 0.1)" },
+  liveRecordingDot: { width: "12px", height: "12px", background: "#ef4444", borderRadius: "50%", boxShadow: "0 0 12px #ef4444" },
+  splitStage: { flex: 1, display: "grid", gridTemplateColumns: "1fr 1fr", gap: "2px", background: "#0f172a" },
+  agentScreen: { position: "relative", background: "#020617", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", borderRight: "1px solid rgba(255,255,255,0.1)" },
+  agentAvatarContainer: { position: "relative", width: "220px", height: "220px", display: "flex", justifyContent: "center", alignItems: "center" },
+  agentGifImage: { width: "100%", height: "100%", borderRadius: "50%", objectFit: "cover", zIndex: 2, border: "2px solid #38bdf8", boxShadow: "0 0 40px rgba(56, 189, 248, 0.4)" },
+  agentAudioGlow: { position: "absolute", width: "100%", height: "100%", borderRadius: "50%", background: "radial-gradient(circle, rgba(56, 189, 248, 0.4), transparent 70%)" },
+  candidateScreen: { position: "relative", background: "#000", display: "flex", alignItems: "center", justifyContent: "center" },
+  candidateVideoFeed: { width: "100%", height: "100%", objectFit: "cover" },
+  screenLabel: { position: "absolute", top: "16px", left: "16px", background: "rgba(0, 0, 0, 0.6)", color: "#f8fafc", fontSize: "12px", fontWeight: "700", padding: "6px 14px", borderRadius: "999px", backdropFilter: "blur(8px)", border: "1px solid rgba(255, 255, 255, 0.12)" },
+
+  // Netflix Subtitles
+  netflixSubtitleContainer: { position: "absolute", bottom: "32px", left: "50%", transform: "translateX(-50%)", zIndex: 10000, width: "90%", maxWidth: "800px", textAlign: "center", pointerEvents: "none" },
+  netflixSubtitleBox: { display: "inline-block", background: "rgba(0, 0, 0, 0.82)", color: "#ffffff", padding: "12px 24px", borderRadius: "12px", fontSize: "17px", fontWeight: "600", border: "1px solid rgba(255, 255, 255, 0.15)", boxShadow: "0 10px 30px rgba(0, 0, 0, 0.8)", backdropFilter: "blur(12px)" },
+
+  scoreCircle: { width: "130px", height: "130px", borderRadius: "50%", border: "6px solid #38bdf8", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", margin: "0 auto 20px", boxShadow: "0 0 30px rgba(56, 189, 248, 0.3)" },
+  scoreValue: { fontSize: "42px", fontWeight: "900", color: "#f8fafc" },
   scoreMax: { fontSize: "14px", color: "#64748b" },
-  evalDetails: { display: "flex", justifyContent: "center", gap: "16px", marginBottom: "16px" },
-  evalItem: { background: "#f1f5f9", padding: "8px 16px", borderRadius: "10px", fontSize: "13px", color: "#334155" },
-  notesText: { color: "#475569", fontSize: "14px", lineHeight: "1.6", fontStyle: "italic" },
-  feedbackGrid: { display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: "12px", textAlign: "left", marginTop: "20px" },
-  feedbackBlock: { background: "#ffffff", border: "1px solid #e2e8f0", borderRadius: "14px", padding: "14px", color: "#334155", fontSize: "13px", lineHeight: "1.5" },
-  breakdown: { display: "grid", gap: "6px", marginTop: "16px", padding: "14px", background: "#f8fafc", border: "1px solid #e2e8f0", borderRadius: "14px", textAlign: "left" },
-  breakdownRow: { display: "flex", justifyContent: "space-between", gap: "16px", color: "#475569", fontSize: "13px" },
-  breakdownValue: { color: "#0f172a", fontWeight: "800" },
+  evalSummaryText: { color: "#cbd5e1", fontSize: "14px", lineHeight: "1.65", background: "rgba(255, 255, 255, 0.04)", padding: "16px", borderRadius: "16px", border: "1px solid rgba(255, 255, 255, 0.08)" },
+  breakdownBox: { display: "grid", gap: "8px", marginTop: "16px", padding: "16px", background: "#090d16", border: "1px solid rgba(255, 255, 255, 0.08)", borderRadius: "16px", textAlign: "left" },
+  breakdownRow: { display: "flex", justifyContent: "space-between", gap: "16px", color: "#cbd5e1", fontSize: "13px" },
 };

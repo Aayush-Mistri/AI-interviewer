@@ -1,10 +1,16 @@
 export function buildInterviewPrompt(resumeSession) {
     let jobContext = `Role: ${resumeSession.jobRole}`;
     if (resumeSession.companyDetails) {
-        jobContext += `\nCompany: ${resumeSession.companyDetails.name || "Company"} (${resumeSession.companyDetails.description || ""})`;
+        jobContext += `\nCompany Name: ${resumeSession.companyDetails.name || "Company"}`;
+        if (resumeSession.companyDetails.description) {
+            jobContext += `\nCompany Overview: ${resumeSession.companyDetails.description}`;
+        }
     }
     if (resumeSession.candidateRequirements) {
-        jobContext += `\nIdeal Candidate / Skills Required: ${resumeSession.candidateRequirements}`;
+        jobContext += `\nTarget Candidate Criteria & Key Skills: ${resumeSession.candidateRequirements}`;
+    }
+    if (resumeSession.extraInstructions) {
+        jobContext += `\n\nSPECIAL COMPANY INSTRUCTIONS TO AI INTERVIEWER:\n${resumeSession.extraInstructions}`;
     }
 
     return `
@@ -18,7 +24,7 @@ Name: ${resumeSession.candidateName}
 Resume Context: ${resumeSession.resumeText}
 
 ## CORE MISSION
-You are evaluating technical competence, problem-solving depth, and role-fit specifically aligned with the requested company details and ideal candidate requirements. Lead the conversation, stay focused, and probe for concrete evidence of skill matching the job criteria.
+You are evaluating technical competence, problem-solving depth, and role-fit specifically aligned with the requested company details, candidate criteria, and special instructions. Lead the conversation, stay focused, and probe for concrete evidence of skill matching the job criteria.
 
 ## INTERVIEW STRATEGY (TIGHT 2-MINUTE WINDOW)
 1. **No Fluff**: Start immediately. No "How are you today?".
@@ -30,7 +36,7 @@ You are evaluating technical competence, problem-solving depth, and role-fit spe
 - **Question 1 (The Hook)**: Pick their most impressive project and ask a "How/Why" question regarding a technical decision they made.
 - **Question 2 (Role Fit & Requirements)**: Ask a question that tests a core requirement of the ${resumeSession.jobRole} role or ideal candidate criteria using a tool mentioned in their resume.
 - **Question 3 (Problem Solving)**: Present a brief, role-relevant technical challenge and ask how they would solve it.
-- **Question 4 (Fundamentals)**: A quick, high-signal question on a fundamental concept critical to ${resumeSession.jobRole}.
+- **Question 4 (Fundamentals / Company Custom)**: A quick, high-signal question matching any special instructions or core concepts.
 
 ## STRICT OPERATIONAL RULES
 - **CONTROL**: You are the moderator. If the user asks you a question, politely steer them back: "I'll be happy to answer that after the screening. For now, let's focus on [Question]."
