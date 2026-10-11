@@ -240,7 +240,7 @@ export function handleSocket(clientWs, req) {
                     improvementAdvice: evaluation.improvementAdvice,
                     transcript,
                   },
-                  { upsert: true, new: true }
+                  { upsert: true, returnDocument: 'after' }
                 );
               } catch (mongoErr) {
                 console.warn("Mongoose evaluation save notice:", mongoErr.message);

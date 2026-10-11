@@ -2302,23 +2302,32 @@ function EvaluationPage() {
 // ==========================================
 function CompanyJobsPage() {
   const navigate = useNavigate();
-  const user = getStoredUser();
+  const [user, setUser] = useState(getStoredUser());
   const [jobs, setJobs] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [isPostJobOpen, setIsPostJobOpen] = useState(false);
-  const [editingJob, setEditingJob] = useState(null);
+
+  useEffect(() => {
+    const handleStorage = () => setUser(getStoredUser());
+    window.addEventListener("storage", handleStorage);
+    return () => window.removeEventListener("storage", handleStorage);
+  }, []);
+
+  const userId = user?.id;
+  const userEmail = user?.email;
+  const isCompany = user?.isCompany;
 
   useEffect(() => {
     async function fetchCompanyJobs() {
-      if (!user?.isCompany) {
+      if (!isCompany || (!userId && !userEmail)) {
         setError("Access Restricted: Only verified company accounts can access the recruiter jobs dashboard.");
         setLoading(false);
         return;
       }
       try {
         setLoading(true);
-        const res = await fetch(`${API_URL}/api/company/jobs?companyId=${encodeURIComponent(user.id)}&userEmail=${encodeURIComponent(user.email)}`);
+        const res = await fetch(`${API_URL}/api/company/jobs?companyId=${encodeURIComponent(userId || "")}&userEmail=${encodeURIComponent(userEmail || "")}`);
         const data = await res.json();
         if (!res.ok) throw new Error(data.error || "Could not fetch company jobs.");
         setJobs(data.jobs || []);
@@ -2329,7 +2338,7 @@ function CompanyJobsPage() {
       }
     }
     fetchCompanyJobs();
-  }, [user]);
+  }, [userId, userEmail, isCompany]);
 
   async function handleToggleJobStatus(jobId, currentStatus) {
     const nextStatus = currentStatus === "closed" ? "active" : "closed";
@@ -2484,22 +2493,32 @@ function CompanyJobsPage() {
 function JobApplicantsPage() {
   const { jobId } = useParams();
   const navigate = useNavigate();
-  const user = getStoredUser();
+  const [user, setUser] = useState(getStoredUser());
   const [applicants, setApplicants] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [selectedCandidate, setSelectedCandidate] = useState(null);
 
   useEffect(() => {
+    const handleStorage = () => setUser(getStoredUser());
+    window.addEventListener("storage", handleStorage);
+    return () => window.removeEventListener("storage", handleStorage);
+  }, []);
+
+  const userId = user?.id;
+  const userEmail = user?.email;
+  const isCompany = user?.isCompany;
+
+  useEffect(() => {
     async function fetchApplicants() {
-      if (!user?.isCompany) {
+      if (!isCompany || (!userId && !userEmail)) {
         setError("Access Restricted: Only verified company recruiters can view job applicants.");
         setLoading(false);
         return;
       }
       try {
         setLoading(true);
-        const res = await fetch(`${API_URL}/api/company/jobs/${encodeURIComponent(jobId)}/applicants?companyId=${encodeURIComponent(user.id)}&userEmail=${encodeURIComponent(user.email)}`);
+        const res = await fetch(`${API_URL}/api/company/jobs/${encodeURIComponent(jobId)}/applicants?companyId=${encodeURIComponent(userId || "")}&userEmail=${encodeURIComponent(userEmail || "")}`);
         const data = await res.json();
         if (!res.ok) throw new Error(data.error || "Could not fetch applicants.");
         setApplicants(data.applicants || []);
@@ -2510,7 +2529,7 @@ function JobApplicantsPage() {
       }
     }
     fetchApplicants();
-  }, [jobId, user]);
+  }, [jobId, userId, userEmail, isCompany]);
 
   if (!user?.isCompany) {
     return (
@@ -2646,22 +2665,31 @@ function JobApplicantsPage() {
 // ==========================================
 function LeaderboardPage() {
   const navigate = useNavigate();
-  const user = getStoredUser();
+  const [user, setUser] = useState(getStoredUser());
   const [leaderboard, setLeaderboard] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [selectedCandidate, setSelectedCandidate] = useState(null);
 
   useEffect(() => {
+    const handleStorage = () => setUser(getStoredUser());
+    window.addEventListener("storage", handleStorage);
+    return () => window.removeEventListener("storage", handleStorage);
+  }, []);
+
+  const userEmail = user?.email;
+  const isCompany = user?.isCompany;
+
+  useEffect(() => {
     async function fetchLeaderboard() {
-      if (!user?.isCompany) {
+      if (!isCompany || !userEmail) {
         setError("Access Restricted: Only verified company accounts can view candidate evaluation records.");
         setLoading(false);
         return;
       }
       try {
         setLoading(true);
-        const res = await fetch(`${API_URL}/api/leaderboard?userEmail=${encodeURIComponent(user.email)}`);
+        const res = await fetch(`${API_URL}/api/leaderboard?userEmail=${encodeURIComponent(userEmail)}`);
         const data = await res.json();
         if (!res.ok) throw new Error(data.error || "Could not fetch leaderboard.");
         setLeaderboard(data?.leaderboard || []);
@@ -2672,7 +2700,7 @@ function LeaderboardPage() {
       }
     }
     fetchLeaderboard();
-  }, [user]);
+  }, [userEmail, isCompany]);
 
   if (!user?.isCompany) {
     return (

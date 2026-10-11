@@ -14,7 +14,7 @@ import { resumeScraper } from "./controllers/resumeLogic.js";
 import { handleSocket } from "./sockets/onConnection.js";
 import { resumeSessions, completedEvaluations, customJobs } from "./state.js";
 import { User, Job, Evaluation } from "./models.js";
-import { generatePresignedUploadUrl, purgeOldB2Videos } from "./utils/b2Service.js";
+import { generatePresignedUploadUrl, purgeOldB2Videos, verifyB2Connection } from "./utils/b2Service.js";
 
 dotenv.config();
 
@@ -555,6 +555,9 @@ server.on("error", (error) => {
 
 server.listen(port, () => {
   console.log(`Server running on port ${port}`);
+
+  // Verify Backblaze B2 Bucket Connection in terminal on startup
+  verifyB2Connection();
 
   // Schedule daily auto-purge for videos older than 3 days in Backblaze B2
   const runAutoPurge = async () => {

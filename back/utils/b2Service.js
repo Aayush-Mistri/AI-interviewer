@@ -1,4 +1,4 @@
-import { S3Client, PutObjectCommand, DeleteObjectCommand, ListObjectsV2Command } from "@aws-sdk/client-s3";
+import { S3Client, PutObjectCommand, DeleteObjectCommand, ListObjectsV2Command, HeadBucketCommand } from "@aws-sdk/client-s3";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 import { config } from "../config.js";
 
@@ -26,6 +26,27 @@ function getS3Client() {
 /**
  * Generates a presigned PUT URL for uploading a video directly to Backblaze B2.
  */
+/**
+ * Verifies that Backblaze B2 credentials and bucket are valid and accessible.
+ */
+export async function verifyB2Connection() {
+  const s3Client = getS3Client();
+  if (!s3Client) {
+    console.log("ℹ️ [B2 Storage] B2 credentials not set. Operating in local storage mode.");
+    return false;
+  }
+
+  try {
+    const command = new HeadBucketCommand({ Bucket: config.b2BucketName });
+    await s3Client.send(command);
+    console.log(`✅ [B2 Storage] Successfully connected to Backblaze B2 bucket: "${config.b2BucketName}"`);
+    return true;
+  } catch (err) {
+    console.warn(`⚠️ [B2 Storage Notice] Could not verify B2 bucket "${config.b2BucketName}": ${err.message}. Direct B2 uploads will fallback to local endpoint if needed.`);
+    return false;
+  }
+}
+
 export async function generatePresignedUploadUrl(filename, contentType = "video/webm", expiresIn = 900) {
   const s3Client = getS3Client();
   if (!s3Client) {
