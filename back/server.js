@@ -14,6 +14,7 @@ import { resumeScraper } from "./controllers/resumeLogic.js";
 import { handleSocket } from "./sockets/onConnection.js";
 import { resumeSessions, completedEvaluations, customJobs } from "./state.js";
 import { User, Job, Evaluation } from "./models.js";
+import { generatePresignedUploadUrl, purgeOldB2Videos } from "./utils/b2Service.js";
 
 dotenv.config();
 
@@ -316,8 +317,25 @@ app.get("/api/leaderboard", async (req, res) => {
 });
 
 app.post("/api/upload-video", upload.single("video"), async (req, res) => {
-  const { sessionId } = req.body;
+  const { sessionId, b2FileUrl, b2Key } = req.body;
 
+  // Handle direct Backblaze B2 notification (JSON payload)
+  if (b2FileUrl) {
+    if (sessionId) {
+      if (completedEvaluations.has(sessionId)) {
+        const evalData = completedEvaluations.get(sessionId);
+        evalData.videoUrl = b2FileUrl;
+        evalData.b2ObjectKey = b2Key;
+        completedEvaluations.set(sessionId, evalData);
+      }
+      if (mongoose.connection.readyState === 1) {
+        try { await Evaluation.updateOne({ sessionId }, { videoUrl: b2FileUrl, b2ObjectKey: b2Key }); } catch (e) {}
+      }
+    }
+    return res.json({ message: "B2 video metadata recorded.", videoUrl: b2FileUrl });
+  }
+
+  // Local file upload fallback
   if (!req.file) return res.status(400).json({ error: "No video file provided." });
 
   const filename = `interview_${sessionId || Date.now()}.webm`;
@@ -343,6 +361,184 @@ app.post("/api/upload-video", upload.single("video"), async (req, res) => {
   });
 });
 
+// --- Backblaze B2 Presigned Upload URL Endpoint ---
+app.post("/api/interviews/get-upload-url", async (req, res) => {
+  try {
+    const { sessionId, filename = "recording.webm", contentType = "video/webm" } = req.body || {};
+    const effectiveFilename = `${sessionId || Date.now()}_${filename}`;
+
+    const b2Data = await generatePresignedUploadUrl(effectiveFilename, contentType);
+    if (b2Data) {
+      return res.json({
+        ok: true,
+        provider: "backblaze_b2",
+        uploadUrl: b2Data.uploadUrl,
+        fileUrl: b2Data.fileUrl,
+        key: b2Data.key,
+      });
+    }
+
+    // Fallback: local endpoint if B2 credentials are not set
+    const fallbackFilename = `interview_${sessionId || Date.now()}.webm`;
+    return res.json({
+      ok: true,
+      provider: "local",
+      uploadUrl: `${config.frontendOrigin === "*" ? "" : config.frontendOrigin}/api/upload-video`,
+      fileUrl: `/videos/${fallbackFilename}`,
+      key: fallbackFilename,
+    });
+  } catch (err) {
+    console.error("Presigned URL error:", err);
+    res.status(500).json({ error: "Could not generate upload URL." });
+  }
+});
+
+// --- Recruiter / Company Multi-Tenancy Job Management Endpoints ---
+
+// Get all jobs for a specific company
+app.get("/api/company/jobs", async (req, res) => {
+  try {
+    const { companyId, userEmail } = req.query;
+    if (!companyId && !userEmail) {
+      return res.status(400).json({ error: "Company identification is required." });
+    }
+
+    let targetCompanyId = companyId;
+    if (!targetCompanyId && userEmail) {
+      if (mongoose.connection.readyState === 1) {
+        const u = await User.findOne({ email: userEmail.toLowerCase() });
+        if (u) targetCompanyId = u._id.toString();
+      } else {
+        const u = memoryUsers.find(x => x.email === userEmail.toLowerCase());
+        if (u) targetCompanyId = u.id;
+      }
+    }
+
+    let jobsList = [];
+    if (mongoose.connection.readyState === 1 && targetCompanyId) {
+      jobsList = await Job.find({ companyId: targetCompanyId }).sort({ createdAt: -1 });
+    } else {
+      jobsList = customJobs.filter(j => j.companyId === targetCompanyId);
+    }
+
+    return res.json({ ok: true, jobs: jobsList });
+  } catch (err) {
+    console.error("Fetch company jobs error:", err);
+    res.status(500).json({ error: "Could not fetch company job listings." });
+  }
+});
+
+// Edit / Update a job listing (Company only)
+app.put("/api/company/jobs/:jobId", async (req, res) => {
+  try {
+    const { jobId } = req.params;
+    const { role, companyName, companyDescription, requirements, extraInstructions, status, companyId } = req.body;
+
+    if (mongoose.connection.readyState === 1) {
+      const job = await Job.findOne({ id: jobId });
+      if (!job) return res.status(404).json({ error: "Job not found." });
+      if (companyId && job.companyId && job.companyId !== companyId) {
+        return res.status(403).json({ error: "Unauthorized access to job listing." });
+      }
+
+      if (role) job.role = role.trim();
+      if (companyName) job.companyName = companyName;
+      if (companyDescription !== undefined) job.companyDescription = companyDescription;
+      if (requirements) job.requirements = Array.isArray(requirements) ? requirements : requirements.split(",").map(s => s.trim());
+      if (extraInstructions !== undefined) job.extraInstructions = extraInstructions;
+      if (status && ["active", "closed"].includes(status)) job.status = status;
+
+      await job.save();
+      return res.json({ ok: true, job });
+    }
+
+    // In-memory update
+    const memJob = customJobs.find(j => j.id === jobId);
+    if (!memJob) return res.status(404).json({ error: "Job not found." });
+    if (role) memJob.role = role.trim();
+    if (status) memJob.status = status;
+    if (requirements) memJob.requirements = Array.isArray(requirements) ? requirements : requirements.split(",").map(s => s.trim());
+    if (extraInstructions !== undefined) memJob.extraInstructions = extraInstructions;
+
+    return res.json({ ok: true, job: memJob });
+  } catch (err) {
+    console.error("Update job error:", err);
+    res.status(500).json({ error: "Could not update job listing." });
+  }
+});
+
+// Close a job position
+app.patch("/api/company/jobs/:jobId/status", async (req, res) => {
+  try {
+    const { jobId } = req.params;
+    const { status, companyId } = req.body;
+
+    if (!["active", "closed"].includes(status)) {
+      return res.status(400).json({ error: "Invalid status value." });
+    }
+
+    if (mongoose.connection.readyState === 1) {
+      const job = await Job.findOne({ id: jobId });
+      if (!job) return res.status(404).json({ error: "Job not found." });
+      if (companyId && job.companyId && job.companyId !== companyId) {
+        return res.status(403).json({ error: "Unauthorized." });
+      }
+      job.status = status;
+      await job.save();
+      return res.json({ ok: true, job });
+    }
+
+    const memJob = customJobs.find(j => j.id === jobId);
+    if (memJob) memJob.status = status;
+    return res.json({ ok: true, job: memJob });
+  } catch (err) {
+    console.error("Change status error:", err);
+    res.status(500).json({ error: "Could not change job status." });
+  }
+});
+
+// Get applicants for a specific job with strict Company tenant isolation
+app.get("/api/company/jobs/:jobId/applicants", async (req, res) => {
+  try {
+    const { jobId } = req.params;
+    const { companyId, userEmail } = req.query;
+
+    let requestingCompanyId = companyId;
+    if (!requestingCompanyId && userEmail) {
+      if (mongoose.connection.readyState === 1) {
+        const u = await User.findOne({ email: userEmail.toLowerCase() });
+        if (u) requestingCompanyId = u._id.toString();
+      } else {
+        const u = memoryUsers.find(x => x.email === userEmail.toLowerCase());
+        if (u) requestingCompanyId = u.id;
+      }
+    }
+
+    if (!requestingCompanyId) {
+      return res.status(403).json({ error: "Access Denied: Company identification is required." });
+    }
+
+    let applicants = [];
+    if (mongoose.connection.readyState === 1) {
+      // Find job first to verify company ownership
+      const targetJob = await Job.findOne({ id: jobId });
+      if (targetJob && targetJob.companyId && targetJob.companyId !== requestingCompanyId) {
+        return res.status(403).json({ error: "Access Denied: You do not own this job listing." });
+      }
+
+      applicants = await Evaluation.find({ jobId, companyId: requestingCompanyId }).sort({ completedAt: -1 });
+    } else {
+      const allEvals = Array.from(completedEvaluations.values());
+      applicants = allEvals.filter(ev => ev.jobId === jobId && ev.companyId === requestingCompanyId);
+    }
+
+    return res.json({ ok: true, applicants });
+  } catch (err) {
+    console.error("Fetch job applicants error:", err);
+    res.status(500).json({ error: "Could not fetch applicants for job." });
+  }
+});
+
 app.post("/api/evaluate-local", evaluateTranscript);
 app.post("/resume", upload.single("resume"), resumeScraper);
 app.get("/evaluation/:sessionId", evaluationChecker);
@@ -359,4 +555,19 @@ server.on("error", (error) => {
 
 server.listen(port, () => {
   console.log(`Server running on port ${port}`);
+
+  // Schedule daily auto-purge for videos older than 3 days in Backblaze B2
+  const runAutoPurge = async () => {
+    try {
+      const purged = await purgeOldB2Videos(3);
+      if (purged > 0) {
+        console.log(`Auto-purge: Removed ${purged} interview recording(s) older than 3 days from B2.`);
+      }
+    } catch (e) {
+      console.warn("Auto-purge warning:", e.message);
+    }
+  };
+
+  runAutoPurge();
+  setInterval(runAutoPurge, 24 * 60 * 60 * 1000);
 });

@@ -526,7 +526,7 @@ function ResourcesSection() {
       title: "Context Injection vs RAG in Resume Screening: Why Full Context Outperforms Vector DBs",
       author: "VaadIn AI Team",
       date: "Engineering Whitepaper",
-      avatar: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100&h=100&fit=crop&crop=faces",
+      image: "/giff/473262431784525.jpg",
       active: true, // highlighted card
     },
     {
@@ -536,7 +536,7 @@ function ResourcesSection() {
       title: "Sub-300ms Audio Latency: WebSocket PCM16 Streaming for Human-like Interview Turn-Taking",
       author: "Audio Systems Lab",
       date: "System Architecture",
-      avatar: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100&h=100&fit=crop&crop=faces",
+      image: "/giff/1597.jpg",
       active: false,
     },
     {
@@ -546,7 +546,7 @@ function ResourcesSection() {
       title: "Eliminating Interviewer Bias: How Objective LLM Rubrics Rate Problem-Solving Depth",
       author: "Talent AI Research",
       date: "Hiring Report",
-      avatar: "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=100&h=100&fit=crop&crop=faces",
+      image: "/giff/473262431784525.jpg",
       active: false,
     },
   ];
@@ -573,6 +573,13 @@ function ResourcesSection() {
                 }}
               >
                 <div style={styles.resourceCardVisual}>
+                  {item.image && (
+                    <img
+                      src={item.image}
+                      alt={item.title}
+                      style={{ position: "absolute", width: "100%", height: "100%", objectFit: "cover", opacity: 0.35 }}
+                    />
+                  )}
                   <div style={styles.resourceCardWatermark}>VaadIn</div>
                   <div style={styles.resourceCardBadgeOverlay}>
                     <span style={styles.launchTag}>⚡ AI INTERVIEWER CORE</span>
@@ -713,10 +720,10 @@ function Footer() {
           <div style={styles.footerCol}>
             <h5 style={styles.footerColTitle}>For Companies</h5>
             <ul style={styles.footerList}>
+              <li><Link to="/company/jobs" style={styles.footerLink}>Company Jobs Dashboard 💼</Link></li>
               <li><Link to="/signup" style={styles.footerLink}>Company Registration</Link></li>
               <li><Link to="/post-job" style={styles.footerLink}>Post Custom AI Roles</Link></li>
               <li><Link to="/leaderboard" style={styles.footerLink}>Candidate Leaderboard 🏆</Link></li>
-              <li><a href="#how-it-works" style={styles.footerLink}>Custom Evaluation Rubrics</a></li>
             </ul>
           </div>
 
@@ -1248,6 +1255,12 @@ function HomePage() {
               <div style={styles.userCommandActions}>
                 {user.isCompany ? (
                   <>
+                    <button
+                      style={styles.postJobCommandBtn}
+                      onClick={() => navigate("/company/jobs")}
+                    >
+                      Jobs Dashboard 💼
+                    </button>
                     <button
                       style={styles.postJobCommandBtn}
                       onClick={() => setIsPostJobOpen(true)}
@@ -1960,11 +1973,39 @@ function InterviewPage() {
   async function uploadVideoBlob() {
     if (!videoChunksRef.current.length) return;
     const videoBlob = new Blob(videoChunksRef.current, { type: "video/webm" });
-    const formData = new FormData();
-    formData.append("video", videoBlob, `interview_${sessionId}.webm`);
-    formData.append("sessionId", sessionId);
 
     try {
+      // 1. Request presigned upload URL (Backblaze B2 or local fallback)
+      const presignedRes = await fetch(`${API_URL}/api/interviews/get-upload-url`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ sessionId, filename: `interview_${sessionId}.webm`, contentType: "video/webm" }),
+      });
+      const urlData = await presignedRes.json();
+
+      if (urlData.ok && urlData.provider === "backblaze_b2" && urlData.uploadUrl) {
+        // Direct upload to Backblaze B2 S3 bucket via presigned PUT URL
+        const uploadB2 = await fetch(urlData.uploadUrl, {
+          method: "PUT",
+          headers: { "Content-Type": "video/webm" },
+          body: videoBlob,
+        });
+
+        if (uploadB2.ok) {
+          // Notify backend of B2 object file URL & key
+          await fetch(`${API_URL}/api/upload-video`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ sessionId, b2FileUrl: urlData.fileUrl, b2Key: urlData.key }),
+          });
+          return;
+        }
+      }
+
+      // 2. Local multipart upload fallback
+      const formData = new FormData();
+      formData.append("video", videoBlob, `interview_${sessionId}.webm`);
+      formData.append("sessionId", sessionId);
       await fetch(`${API_URL}/api/upload-video`, { method: "POST", body: formData });
     } catch (err) {
       console.error("Video upload error:", err);
@@ -1980,9 +2021,10 @@ function InterviewPage() {
   }
 
   async function startMediaCapture() {
+    // 360p resolution capture (640x360, 24fps)
     const stream = await navigator.mediaDevices.getUserMedia({
       audio: true,
-      video: { width: { max: 320 }, height: { max: 240 }, frameRate: { max: 15 } },
+      video: { width: { ideal: 640 }, height: { ideal: 360 }, frameRate: { ideal: 24 } },
     });
     streamRef.current = stream;
 
@@ -1993,8 +2035,8 @@ function InterviewPage() {
     try {
       videoChunksRef.current = [];
       const mediaRecorder = new MediaRecorder(stream, {
-        mimeType: "video/webm;codecs=vp8,opus",
-        videoBitsPerSecond: 100000,
+        mimeType: MediaRecorder.isTypeSupported("video/webm;codecs=vp8,opus") ? "video/webm;codecs=vp8,opus" : "video/webm",
+        videoBitsPerSecond: 250000, // optimized for 360p quality
       });
       mediaRecorder.ondataavailable = (e) => {
         if (e.data.size > 0) videoChunksRef.current.push(e.data);
@@ -2256,6 +2298,350 @@ function EvaluationPage() {
 }
 
 // ==========================================
+// Company Jobs Dashboard (`/company/jobs`)
+// ==========================================
+function CompanyJobsPage() {
+  const navigate = useNavigate();
+  const user = getStoredUser();
+  const [jobs, setJobs] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+  const [isPostJobOpen, setIsPostJobOpen] = useState(false);
+  const [editingJob, setEditingJob] = useState(null);
+
+  useEffect(() => {
+    async function fetchCompanyJobs() {
+      if (!user?.isCompany) {
+        setError("Access Restricted: Only verified company accounts can access the recruiter jobs dashboard.");
+        setLoading(false);
+        return;
+      }
+      try {
+        setLoading(true);
+        const res = await fetch(`${API_URL}/api/company/jobs?companyId=${encodeURIComponent(user.id)}&userEmail=${encodeURIComponent(user.email)}`);
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || "Could not fetch company jobs.");
+        setJobs(data.jobs || []);
+      } catch (err) {
+        setError(err.message);
+      } finally {
+        setLoading(false);
+      }
+    }
+    fetchCompanyJobs();
+  }, [user]);
+
+  async function handleToggleJobStatus(jobId, currentStatus) {
+    const nextStatus = currentStatus === "closed" ? "active" : "closed";
+    try {
+      const res = await fetch(`${API_URL}/api/company/jobs/${jobId}/status`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ status: nextStatus, companyId: user?.id }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Could not update status.");
+      setJobs((prev) => prev.map((j) => (j.id === jobId ? { ...j, status: nextStatus } : j)));
+    } catch (e) {
+      alert(e.message);
+    }
+  }
+
+  if (!user?.isCompany) {
+    return (
+      <div style={styles.authContainer}>
+        <div style={styles.authCardBox}>
+          <span style={{ fontSize: "40px" }}>🔒</span>
+          <h2 style={{ color: "#ffffff", margin: "16px 0 8px" }}>Company Recruiter Access Only</h2>
+          <p style={{ color: "#9ca3af", fontSize: "14px", margin: "0 0 24px" }}>
+            The job management suite is strictly restricted to registered company recruiters.
+          </p>
+          <button style={styles.authSubmitBtn} onClick={() => navigate("/")}>
+            Return to Platform
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div style={styles.pageContainer}>
+      <Navbar
+        user={user}
+        onLogout={() => {
+          localStorage.removeItem("user");
+          navigate("/");
+        }}
+        onOpenContact={() => {}}
+        onOpenSearch={() => {}}
+        isDashboard={true}
+      />
+
+      <div style={styles.leaderboardShell}>
+        <div style={styles.leaderboardHeader}>
+          <div>
+            <h2 style={styles.leaderboardTitle}>Company Job Management Dashboard 💼</h2>
+            <p style={{ color: "#9ca3af", margin: "6px 0 0", fontSize: "14px" }}>
+              Manage active software engineering roles, edit AI interview rubrics, and inspect applicant recordings for <strong>{user.companyName || user.name}</strong>.
+            </p>
+          </div>
+          <div style={{ display: "flex", gap: "12px" }}>
+            <button style={styles.postJobSmallBtn} onClick={() => setIsPostJobOpen(true)}>
+              + Post New Role
+            </button>
+            <button style={{ ...styles.postJobSmallBtn, backgroundColor: "rgba(255,255,255,0.1)", color: "#fff" }} onClick={() => navigate("/leaderboard")}>
+              View Overall Scoreboard 🏆
+            </button>
+          </div>
+        </div>
+
+        {loading ? (
+          <p style={{ textAlign: "center", color: "#9ca3af", padding: "60px" }}>
+            Loading job listings...
+          </p>
+        ) : error ? (
+          <div style={styles.errorCard}><p style={{ color: "#ef4444", margin: 0 }}>{error}</p></div>
+        ) : jobs.length === 0 ? (
+          <div style={styles.emptyLeaderboardBox}>
+            <h3 style={{ color: "#ffffff", margin: "0 0 10px" }}>No Roles Posted Yet</h3>
+            <p style={{ color: "#9ca3af", margin: "0 0 20px", fontSize: "14px" }}>
+              Create your first AI-screened technical job listing to start receiving candidates.
+            </p>
+            <button style={styles.authSubmitBtn} onClick={() => setIsPostJobOpen(true)}>
+              + Post First Role
+            </button>
+          </div>
+        ) : (
+          <div style={styles.jobCardsGrid}>
+            {jobs.map((job) => (
+              <div key={job.id} style={styles.jobCardItem}>
+                <div style={{ ...styles.jobCardTopGlow, background: job.status === "closed" ? "#6b7280" : "linear-gradient(135deg, #00f5a0, #00b4d8)" }} />
+                <div style={styles.jobCardHeader}>
+                  <div>
+                    <h3 style={styles.jobRoleName}>{job.role}</h3>
+                    <span style={styles.jobCompanyTag}>
+                      🏢 {job.companyName || user.companyName}
+                    </span>
+                  </div>
+                  <span
+                    style={{
+                      ...styles.jobLivePill,
+                      backgroundColor: job.status === "closed" ? "rgba(239,68,68,0.15)" : "rgba(0, 245, 160, 0.15)",
+                      color: job.status === "closed" ? "#ef4444" : "#00f5a0",
+                      borderColor: job.status === "closed" ? "rgba(239,68,68,0.3)" : "rgba(0, 245, 160, 0.3)",
+                    }}
+                  >
+                    {job.status === "closed" ? "Closed" : "Active AI Screening"}
+                  </span>
+                </div>
+
+                <div style={{ ...styles.jobReqsWrap, margin: "14px 0" }}>
+                  {(Array.isArray(job.requirements) ? job.requirements : [job.requirements]).map((req) => (
+                    <span key={req} style={styles.jobReqTag}>{req}</span>
+                  ))}
+                </div>
+
+                {job.extraInstructions && (
+                  <div style={styles.jobCustomPromptSnippet}>
+                    🤖 <b>Prompt Injected:</b> "{job.extraInstructions.slice(0, 85)}..."
+                  </div>
+                )}
+
+                <div style={{ display: "flex", gap: "10px", marginTop: "auto" }}>
+                  <button
+                    style={{ ...styles.jobApplyBtn, backgroundColor: "#00f5a0", color: "#000000" }}
+                    onClick={() => navigate(`/company/jobs/${job.id}/applicants`)}
+                  >
+                    View Applicants 👥
+                  </button>
+                  <button
+                    style={{ ...styles.jobApplyBtn, backgroundColor: "rgba(255,255,255,0.08)", color: "#ffffff", width: "auto" }}
+                    onClick={() => handleToggleJobStatus(job.id, job.status)}
+                  >
+                    {job.status === "closed" ? "Reopen" : "Close Role"}
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+
+      <PostJobModal
+        isOpen={isPostJobOpen}
+        onClose={() => setIsPostJobOpen(false)}
+        onJobCreated={(newJ) => setJobs((prev) => [newJ, ...prev])}
+        user={user}
+      />
+      <Footer />
+    </div>
+  );
+}
+
+// ==========================================
+// Company Job Applicants Evaluation Page (`/company/jobs/:jobId/applicants`)
+// ==========================================
+function JobApplicantsPage() {
+  const { jobId } = useParams();
+  const navigate = useNavigate();
+  const user = getStoredUser();
+  const [applicants, setApplicants] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+  const [selectedCandidate, setSelectedCandidate] = useState(null);
+
+  useEffect(() => {
+    async function fetchApplicants() {
+      if (!user?.isCompany) {
+        setError("Access Restricted: Only verified company recruiters can view job applicants.");
+        setLoading(false);
+        return;
+      }
+      try {
+        setLoading(true);
+        const res = await fetch(`${API_URL}/api/company/jobs/${encodeURIComponent(jobId)}/applicants?companyId=${encodeURIComponent(user.id)}&userEmail=${encodeURIComponent(user.email)}`);
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || "Could not fetch applicants.");
+        setApplicants(data.applicants || []);
+      } catch (err) {
+        setError(err.message);
+      } finally {
+        setLoading(false);
+      }
+    }
+    fetchApplicants();
+  }, [jobId, user]);
+
+  if (!user?.isCompany) {
+    return (
+      <div style={styles.authContainer}>
+        <div style={styles.authCardBox}>
+          <span style={{ fontSize: "40px" }}>🔒</span>
+          <h2 style={{ color: "#ffffff", margin: "16px 0 8px" }}>Company Recruiter Portal Restricted</h2>
+          <p style={{ color: "#9ca3af", fontSize: "14px", margin: "0 0 24px" }}>
+            Viewing candidate applicants requires a verified company account.
+          </p>
+          <button style={styles.authSubmitBtn} onClick={() => navigate("/")}>
+            Return to Platform
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div style={styles.pageContainer}>
+      <Navbar
+        user={user}
+        onLogout={() => {
+          localStorage.removeItem("user");
+          navigate("/");
+        }}
+        onOpenContact={() => {}}
+        onOpenSearch={() => {}}
+        isDashboard={true}
+      />
+
+      <div style={styles.leaderboardShell}>
+        <div style={styles.leaderboardHeader}>
+          <div>
+            <div style={{ display: "flex", alignItems: "center", gap: "10px", marginBottom: "6px" }}>
+              <button
+                onClick={() => navigate("/company/jobs")}
+                style={{ background: "none", border: "none", color: "#00f5a0", fontSize: "14px", fontWeight: "700", cursor: "pointer", padding: 0 }}
+              >
+                ← Back to Company Jobs
+              </button>
+            </div>
+            <h2 style={styles.leaderboardTitle}>Applicants & Evaluation Metrics 👥</h2>
+            <p style={{ color: "#9ca3af", margin: "6px 0 0", fontSize: "14px" }}>
+              Inspecting AI voice screening recordings and transcripts for Position ID: <strong style={{ color: "#ffffff" }}>{jobId}</strong>
+            </p>
+          </div>
+        </div>
+
+        {loading ? (
+          <p style={{ textAlign: "center", color: "#9ca3af", padding: "60px" }}>
+            Loading candidate application data...
+          </p>
+        ) : error ? (
+          <div style={styles.errorCard}><p style={{ color: "#ef4444", margin: 0 }}>{error}</p></div>
+        ) : applicants.length === 0 ? (
+          <div style={styles.emptyLeaderboardBox}>
+            <h3 style={{ color: "#ffffff", margin: "0 0 10px" }}>No Applicants for this Position Yet</h3>
+            <p style={{ color: "#9ca3af", margin: 0, fontSize: "14px" }}>
+              Candidates who complete an interview for this job will appear here with video replay and AI scores.
+            </p>
+          </div>
+        ) : (
+          <div style={{ display: "grid", gap: "16px" }}>
+            {applicants.map((item, index) => (
+              <div key={item.sessionId || index} style={styles.candidateCard}>
+                <div style={styles.candidateCardRow}>
+                  <div style={{ display: "flex", alignItems: "center", gap: "16px" }}>
+                    <div style={styles.rankPill}>#{index + 1}</div>
+                    <div>
+                      <h3 style={styles.candidateNameText}>{item.candidateName}</h3>
+                      <span style={{ fontSize: "13px", color: "#9ca3af" }}>
+                        Session ID: <code style={{ color: "#00f5a0" }}>{item.sessionId?.slice(0, 16)}...</code>
+                      </span>
+                    </div>
+                  </div>
+
+                  <div style={{ display: "flex", alignItems: "center", gap: "20px" }}>
+                    <div style={{ textAlign: "right" }}>
+                      <span style={styles.candidateScoreNum}>{item.score}</span>
+                      <span style={{ fontSize: "12px", color: "#9ca3af" }}> / 100</span>
+                    </div>
+                    <button
+                      style={styles.detailsToggleBtn}
+                      onClick={() =>
+                        setSelectedCandidate(selectedCandidate?.sessionId === item.sessionId ? null : item)
+                      }
+                    >
+                      {selectedCandidate?.sessionId === item.sessionId ? "Hide Analysis" : "Inspect Video & Transcript"}
+                    </button>
+                  </div>
+                </div>
+
+                {selectedCandidate?.sessionId === item.sessionId && (
+                  <div style={styles.candidateExpandedDetails}>
+                    <div>
+                      <h4 style={styles.detailsSectionHeading}>AI Feedback & Evaluation</h4>
+                      <p style={styles.detailsSummaryPara}>{item.summary || "Automated evaluation completed."}</p>
+
+                      <h4 style={{ ...styles.detailsSectionHeading, marginTop: "16px" }}>Candidate Transcript</h4>
+                      <div style={styles.transcriptBox}>
+                        {item.transcript || "No transcript recorded."}
+                      </div>
+                    </div>
+
+                    <div style={{ textAlign: "center" }}>
+                      <h4 style={styles.detailsSectionHeading}>Interview Video Archival (3-Day B2 Storage)</h4>
+                      {item.videoUrl ? (
+                        <video
+                          src={item.videoUrl.startsWith("http") ? item.videoUrl : `${API_URL}${item.videoUrl}`}
+                          controls
+                          style={styles.recordingPlayer}
+                        />
+                      ) : (
+                        <div style={styles.noVideoBox}>No Video Recording Saved</div>
+                      )}
+                    </div>
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+
+      <Footer />
+    </div>
+  );
+}
+
+// ==========================================
 // Hiring Company Leaderboard Page
 // ==========================================
 function LeaderboardPage() {
@@ -2420,6 +2806,8 @@ export default function App() {
         <Route path="/login" element={<LoginPage />} />
         <Route path="/signup" element={<SignupPage />} />
         <Route path="/post-job" element={<CompanyJobPage />} />
+        <Route path="/company/jobs" element={<CompanyJobsPage />} />
+        <Route path="/company/jobs/:jobId/applicants" element={<JobApplicantsPage />} />
         <Route path="/leaderboard" element={<LeaderboardPage />} />
         <Route path="/apply/:jobId" element={<UploadPage />} />
         <Route path="/interview/:sessionId" element={<InterviewPage />} />
