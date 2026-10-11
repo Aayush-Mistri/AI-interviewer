@@ -1019,7 +1019,14 @@ function LandingPage() {
         const res = await fetch(`${API_URL}/api/jobs`);
         const data = await res.json();
         if (data?.jobs?.length) {
-          setAllJobs([...data.jobs, ...DEFAULT_JOBS]);
+          const merged = [...data.jobs, ...DEFAULT_JOBS];
+          const uniqueMap = new Map();
+          merged.forEach((j) => {
+            if (j.id && !uniqueMap.has(j.id)) {
+              uniqueMap.set(j.id, j);
+            }
+          });
+          setAllJobs(Array.from(uniqueMap.values()));
         }
       } catch (e) {
         console.error("Could not fetch custom jobs", e);
@@ -1991,38 +1998,18 @@ function InterviewPage() {
     const videoBlob = new Blob(videoChunksRef.current, { type: "video/webm" });
 
     try {
-      // 1. Request presigned upload URL (Backblaze B2 or local fallback)
-      const presignedRes = await fetch(`${API_URL}/api/interviews/get-upload-url`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ sessionId, filename: `interview_${sessionId}.webm`, contentType: "video/webm" }),
-      });
-      const urlData = await presignedRes.json();
-
-      if (urlData.ok && urlData.provider === "backblaze_b2" && urlData.uploadUrl) {
-        // Direct upload to Backblaze B2 S3 bucket via presigned PUT URL
-        const uploadB2 = await fetch(urlData.uploadUrl, {
-          method: "PUT",
-          headers: { "Content-Type": "video/webm" },
-          body: videoBlob,
-        });
-
-        if (uploadB2.ok) {
-          // Notify backend of B2 object file URL & key
-          await fetch(`${API_URL}/api/upload-video`, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ sessionId, b2FileUrl: urlData.fileUrl, b2Key: urlData.key }),
-          });
-          return;
-        }
-      }
-
-      // 2. Local multipart upload fallback
+      // Send video file directly to backend API (/api/upload-video)
+      // Node.js server uploads directly to Backblaze B2 without browser CORS blocking
       const formData = new FormData();
       formData.append("video", videoBlob, `interview_${sessionId}.webm`);
       formData.append("sessionId", sessionId);
-      await fetch(`${API_URL}/api/upload-video`, { method: "POST", body: formData });
+
+      const response = await fetch(`${API_URL}/api/upload-video`, {
+        method: "POST",
+        body: formData,
+      });
+      const data = await response.json();
+      console.log("Uploaded video response:", data);
     } catch (err) {
       console.error("Video upload error:", err);
     } finally {
