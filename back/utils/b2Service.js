@@ -47,6 +47,35 @@ export async function verifyB2Connection() {
   }
 }
 
+/**
+ * Directly uploads a buffer (e.g. video file) to Backblaze B2 bucket from the server.
+ */
+export async function uploadBufferToB2(fileBuffer, filename = "recording.webm", contentType = "video/webm") {
+  const s3Client = getS3Client();
+  if (!s3Client) return null;
+
+  try {
+    const key = `interviews/${Date.now()}_${filename}`;
+    const command = new PutObjectCommand({
+      Bucket: config.b2BucketName,
+      Key: key,
+      Body: fileBuffer,
+      ContentType: contentType,
+    });
+
+    await s3Client.send(command);
+
+    const endpointHost = config.b2Endpoint.replace(/^https?:\/\//, "").replace(/\/+$/, "");
+    const fileUrl = `https://${endpointHost}/${config.b2BucketName}/${key}`;
+
+    console.log(`✅ [B2 Storage] Directly uploaded video to Backblaze B2: ${fileUrl}`);
+    return { fileUrl, key };
+  } catch (err) {
+    console.error("❌ [B2 Storage Error] Failed direct server-side upload to B2:", err.message);
+    return null;
+  }
+}
+
 export async function generatePresignedUploadUrl(filename, contentType = "video/webm", expiresIn = 900) {
   const s3Client = getS3Client();
   if (!s3Client) {
