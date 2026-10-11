@@ -2,6 +2,12 @@ import { S3Client, PutObjectCommand, DeleteObjectCommand, ListObjectsV2Command, 
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 import { config } from "../config.js";
 
+function extractB2Region(endpoint) {
+  if (!endpoint) return "us-west-004";
+  const match = endpoint.match(/s3\.([a-z0-9-]+)\.backblazeb2\.com/i);
+  return match ? match[1] : "us-west-004";
+}
+
 function getS3Client() {
   if (!config.b2KeyId || !config.b2ApplicationKey) {
     return null;
@@ -12,9 +18,11 @@ function getS3Client() {
     endpoint = `https://${endpoint}`;
   }
 
+  const region = extractB2Region(endpoint);
+
   return new S3Client({
     endpoint,
-    region: "us-west-004", // Default B2 region or region from endpoint
+    region,
     credentials: {
       accessKeyId: config.b2KeyId,
       secretAccessKey: config.b2ApplicationKey,
