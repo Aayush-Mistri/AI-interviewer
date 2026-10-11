@@ -61,7 +61,8 @@ export async function generatePresignedUploadUrl(filename, contentType = "video/
   });
 
   const uploadUrl = await getSignedUrl(s3Client, command, { expiresIn });
-  const fileUrl = `${s3Client.config.endpoint}/${config.b2BucketName}/${key}`;
+  const endpointHost = config.b2Endpoint.replace(/^https?:\/\//, "").replace(/\/+$/, "");
+  const fileUrl = `https://${endpointHost}/${config.b2BucketName}/${key}`;
 
   return { uploadUrl, fileUrl, key };
 }

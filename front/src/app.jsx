@@ -1886,6 +1886,7 @@ function InterviewPage() {
   const videoElementRef = useRef(null);
   const playTimeRef = useRef(0);
   const evaluationRef = useRef(null);
+  const isUploadingVideoRef = useRef(false);
 
   const [connected, setConnected] = useState(false);
   const [timeLeft, setTimeLeft] = useState(120);
@@ -1971,7 +1972,22 @@ function InterviewPage() {
   }
 
   async function uploadVideoBlob() {
-    if (!videoChunksRef.current.length) return;
+    if (isUploadingVideoRef.current) return;
+    isUploadingVideoRef.current = true;
+
+    // Ensure all mediaRecorder chunks are flushed
+    if (mediaRecorderRef.current && mediaRecorderRef.current.state !== "inactive") {
+      await new Promise((resolve) => {
+        mediaRecorderRef.current.onstop = resolve;
+        mediaRecorderRef.current.stop();
+      });
+    }
+
+    if (!videoChunksRef.current.length) {
+      isUploadingVideoRef.current = false;
+      return;
+    }
+
     const videoBlob = new Blob(videoChunksRef.current, { type: "video/webm" });
 
     try {
@@ -2009,6 +2025,8 @@ function InterviewPage() {
       await fetch(`${API_URL}/api/upload-video`, { method: "POST", body: formData });
     } catch (err) {
       console.error("Video upload error:", err);
+    } finally {
+      isUploadingVideoRef.current = false;
     }
   }
 
