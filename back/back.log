@@ -1,2 +1,5 @@
 Server running on port 3001
-ℹ️ [B2 Storage] B2 credentials not set. Operating in local storage mode.
+Error during B2 auto-purge job: Malformed Access Key Id
+⚠️ [B2 Storage Notice] Could not verify B2 bucket "AI-interviewer-009": UnknownError. Direct B2 uploads will fallback to local endpoint if needed.
+❌ [B2 Storage Error] Failed direct server-side upload to B2: Malformed Access Key Id
+📁 [Local Fallback] Video saved locally: /videos/interview_b2_test_sample_session.webm

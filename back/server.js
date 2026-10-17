@@ -14,7 +14,7 @@ import { resumeScraper } from "./controllers/resumeLogic.js";
 import { handleSocket } from "./sockets/onConnection.js";
 import { resumeSessions, completedEvaluations, customJobs } from "./state.js";
 import { User, Job, Evaluation } from "./models.js";
-import { generatePresignedUploadUrl, purgeOldB2Videos, verifyB2Connection } from "./utils/b2Service.js";
+import { generatePresignedUploadUrl, purgeOldB2Videos, verifyB2Connection, uploadBufferToB2 } from "./utils/b2Service.js";
 
 dotenv.config();
 
@@ -317,48 +317,69 @@ app.get("/api/leaderboard", async (req, res) => {
 });
 
 app.post("/api/upload-video", upload.single("video"), async (req, res) => {
-  const { sessionId, b2FileUrl, b2Key } = req.body;
+  try {
+    const { sessionId, b2FileUrl, b2Key } = req.body || {};
 
-  // Handle direct Backblaze B2 notification (JSON payload)
-  if (b2FileUrl) {
+    // Handle direct Backblaze B2 notification (JSON payload)
+    if (b2FileUrl) {
+      if (sessionId) {
+        if (completedEvaluations.has(sessionId)) {
+          const evalData = completedEvaluations.get(sessionId);
+          evalData.videoUrl = b2FileUrl;
+          evalData.b2ObjectKey = b2Key;
+          completedEvaluations.set(sessionId, evalData);
+        }
+        if (mongoose.connection.readyState === 1) {
+          try { await Evaluation.updateOne({ sessionId }, { videoUrl: b2FileUrl, b2ObjectKey: b2Key }); } catch (e) {}
+        }
+      }
+      return res.json({ message: "B2 video metadata recorded.", videoUrl: b2FileUrl });
+    }
+
+    if (!req.file) return res.status(400).json({ error: "No video file provided." });
+
+    const filename = `interview_${sessionId || Date.now()}.webm`;
+
+    // 1. Attempt direct server-side upload to Backblaze B2 bucket
+    const b2Upload = await uploadBufferToB2(req.file.buffer, filename, "video/webm");
+
+    let finalVideoUrl = "";
+    let finalB2Key = null;
+
+    if (b2Upload && b2Upload.fileUrl) {
+      finalVideoUrl = b2Upload.fileUrl;
+      finalB2Key = b2Upload.key;
+      console.log(`🚀 [B2 Upload Success] Video saved to B2 bucket: ${finalVideoUrl}`);
+    } else {
+      // 2. Local disk fallback if B2 is not configured or fails
+      const filePath = path.join(videosDir, filename);
+      await fs.promises.writeFile(filePath, req.file.buffer);
+      finalVideoUrl = `/videos/${filename}`;
+      console.log(`📁 [Local Fallback] Video saved locally: ${finalVideoUrl}`);
+    }
+
     if (sessionId) {
       if (completedEvaluations.has(sessionId)) {
         const evalData = completedEvaluations.get(sessionId);
-        evalData.videoUrl = b2FileUrl;
-        evalData.b2ObjectKey = b2Key;
+        evalData.videoUrl = finalVideoUrl;
+        if (finalB2Key) evalData.b2ObjectKey = finalB2Key;
         completedEvaluations.set(sessionId, evalData);
       }
       if (mongoose.connection.readyState === 1) {
-        try { await Evaluation.updateOne({ sessionId }, { videoUrl: b2FileUrl, b2ObjectKey: b2Key }); } catch (e) {}
+        try {
+          await Evaluation.updateOne(
+            { sessionId },
+            { videoUrl: finalVideoUrl, ...(finalB2Key ? { b2ObjectKey: finalB2Key } : {}) }
+          );
+        } catch (e) {}
       }
     }
-    return res.json({ message: "B2 video metadata recorded.", videoUrl: b2FileUrl });
+
+    return res.json({ message: "Video uploaded successfully.", videoUrl: finalVideoUrl, b2Key: finalB2Key });
+  } catch (err) {
+    console.error("Upload video error:", err);
+    return res.status(500).json({ error: "Could not upload video file." });
   }
-
-  // Local file upload fallback
-  if (!req.file) return res.status(400).json({ error: "No video file provided." });
-
-  const filename = `interview_${sessionId || Date.now()}.webm`;
-  const filePath = path.join(videosDir, filename);
-
-  fs.writeFile(filePath, req.file.buffer, async (err) => {
-    if (err) return res.status(500).json({ error: "Could not save video file." });
-
-    const videoUrl = `/videos/${filename}`;
-
-    if (sessionId) {
-      if (completedEvaluations.has(sessionId)) {
-        const evalData = completedEvaluations.get(sessionId);
-        evalData.videoUrl = videoUrl;
-        completedEvaluations.set(sessionId, evalData);
-      }
-      if (mongoose.connection.readyState === 1) {
-        try { await Evaluation.updateOne({ sessionId }, { videoUrl }); } catch (e) {}
-      }
-    }
-
-    res.json({ message: "Video uploaded successfully.", videoUrl });
-  });
 });
 
 // --- Backblaze B2 Presigned Upload URL Endpoint ---
