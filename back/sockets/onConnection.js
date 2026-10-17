@@ -186,7 +186,8 @@ export function handleSocket(clientWs, req) {
           await historyWrite;
 
           try {
-            const durationSeconds = Math.round((Date.now() - startedAt) / 1000);
+            const endedAt = Date.now();
+            const durationSeconds = Math.round((endedAt - startedAt) / 1000);
             const transcript = transcriptLines.map(({ speaker, text }) => `${speaker}: ${text}`).join("\n") || "No conversation text was captured.";
             const evaluation = evaluateCandidate({
                 resumeText: resumeSession.resumeText,
@@ -209,6 +210,9 @@ export function handleSocket(clientWs, req) {
                 file: config.evaluationFile,
                 conversationHistoryFile: historyFile,
                 durationSeconds,
+                startedAt: new Date(startedAt).toISOString(),
+                endedAt: new Date(endedAt).toISOString(),
+                resumeUrl: resumeSession.resumeUrl || null,
                 notes: evaluation.notes,
                 summary: evaluation.summary,
                 scoreBreakdown: evaluation.scoreBreakdown,
@@ -239,6 +243,9 @@ export function handleSocket(clientWs, req) {
                     weaknesses: evaluation.weaknesses,
                     improvementAdvice: evaluation.improvementAdvice,
                     transcript,
+                    resumeUrl: resumeSession.resumeUrl || null,
+                    startedAt: new Date(startedAt),
+                    endedAt: new Date(endedAt)
                   },
                   { upsert: true, returnDocument: 'after' }
                 );

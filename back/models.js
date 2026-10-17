@@ -40,6 +40,8 @@ const evaluationSchema = new mongoose.Schema({
   videoUrl: { type: String, default: null },
   b2ObjectKey: { type: String, default: null },
   resumeUrl: { type: String, default: null },
+  startedAt: { type: Date, default: null },
+  endedAt: { type: Date, default: null },
   completedAt: { type: Date, default: Date.now }
 });
 

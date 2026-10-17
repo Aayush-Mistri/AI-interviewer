@@ -2261,16 +2261,52 @@ function EvaluationPage() {
           </div>
         )}
 
+        <div style={{ margin: "16px 0", padding: "12px", backgroundColor: "rgba(255, 255, 255, 0.04)", borderRadius: "10px", fontSize: "13px", color: "#cbd5e1", display: "flex", flexWrap: "wrap", justifyContent: "space-between", gap: "10px" }}>
+          <span>⏱️ <b>Start:</b> {evaluation.startedAt ? new Date(evaluation.startedAt).toLocaleTimeString() : "N/A"}</span>
+          <span>⌛ <b>End:</b> {evaluation.endedAt ? new Date(evaluation.endedAt).toLocaleTimeString() : "N/A"}</span>
+          {evaluation.resumeUrl && (
+            <a
+              href={evaluation.resumeUrl.startsWith("http") ? evaluation.resumeUrl : `${API_URL}${evaluation.resumeUrl}`}
+              target="_blank"
+              rel="noreferrer"
+              style={{ color: "#00f5a0", fontWeight: "700", textDecoration: "none" }}
+            >
+              📄 View Resume PDF
+            </a>
+          )}
+        </div>
+
         {evaluation.videoUrl && (
           <div style={{ margin: "20px 0", textAlign: "center" }}>
             <h4 style={{ fontSize: "13px", color: "#38bdf8", marginBottom: "8px" }}>
               📹 Synchronized Video Recording
             </h4>
             <video
-              src={`${API_URL}${evaluation.videoUrl}`}
+              src={evaluation.videoUrl.startsWith("http") ? evaluation.videoUrl : `${API_URL}${evaluation.videoUrl}`}
               controls
               style={styles.evalVideoPlayer}
             />
+            <div style={{ marginTop: "10px" }}>
+              <a
+                href={evaluation.videoUrl.startsWith("http") ? evaluation.videoUrl : `${API_URL}${evaluation.videoUrl}`}
+                download={`interview_${sessionId}.webm`}
+                target="_blank"
+                rel="noreferrer"
+                style={{
+                  display: "inline-block",
+                  backgroundColor: "rgba(0, 245, 160, 0.15)",
+                  border: "1px solid rgba(0, 245, 160, 0.3)",
+                  color: "#00f5a0",
+                  padding: "6px 16px",
+                  borderRadius: "6px",
+                  fontSize: "12px",
+                  fontWeight: "700",
+                  textDecoration: "none"
+                }}
+              >
+                ⬇️ Download Video Recording
+              </a>
+            </div>
           </div>
         )}
 
@@ -2631,6 +2667,21 @@ function JobApplicantsPage() {
                 {selectedCandidate?.sessionId === item.sessionId && (
                   <div style={styles.candidateExpandedDetails}>
                     <div>
+                      <div style={{ display: "flex", flexWrap: "wrap", gap: "16px", marginBottom: "12px", fontSize: "12px", color: "#9ca3af", backgroundColor: "rgba(255,255,255,0.03)", padding: "8px 12px", borderRadius: "8px" }}>
+                        <span>⏱️ <b>Start:</b> {item.startedAt ? new Date(item.startedAt).toLocaleString() : (item.completedAt ? new Date(item.completedAt).toLocaleString() : "N/A")}</span>
+                        <span>⌛ <b>End:</b> {item.endedAt ? new Date(item.endedAt).toLocaleString() : "N/A"}</span>
+                        {item.resumeUrl && (
+                          <a
+                            href={item.resumeUrl.startsWith("http") ? item.resumeUrl : `${API_URL}${item.resumeUrl}`}
+                            target="_blank"
+                            rel="noreferrer"
+                            style={{ color: "#00f5a0", fontWeight: "700", textDecoration: "none" }}
+                          >
+                            📄 View Resume PDF
+                          </a>
+                        )}
+                      </div>
+
                       <h4 style={styles.detailsSectionHeading}>AI Feedback & Evaluation</h4>
                       <p style={styles.detailsSummaryPara}>{item.summary || "Automated evaluation completed."}</p>
 
@@ -2643,11 +2694,33 @@ function JobApplicantsPage() {
                     <div style={{ textAlign: "center" }}>
                       <h4 style={styles.detailsSectionHeading}>Interview Video Archival (3-Day B2 Storage)</h4>
                       {item.videoUrl ? (
-                        <video
-                          src={item.videoUrl.startsWith("http") ? item.videoUrl : `${API_URL}${item.videoUrl}`}
-                          controls
-                          style={styles.recordingPlayer}
-                        />
+                        <>
+                          <video
+                            src={item.videoUrl.startsWith("http") ? item.videoUrl : `${API_URL}${item.videoUrl}`}
+                            controls
+                            style={styles.recordingPlayer}
+                          />
+                          <a
+                            href={item.videoUrl.startsWith("http") ? item.videoUrl : `${API_URL}${item.videoUrl}`}
+                            download={`interview_${item.sessionId}.webm`}
+                            target="_blank"
+                            rel="noreferrer"
+                            style={{
+                              display: "inline-block",
+                              marginTop: "8px",
+                              backgroundColor: "rgba(0, 245, 160, 0.15)",
+                              border: "1px solid rgba(0, 245, 160, 0.3)",
+                              color: "#00f5a0",
+                              padding: "6px 12px",
+                              borderRadius: "6px",
+                              fontSize: "12px",
+                              fontWeight: "700",
+                              textDecoration: "none"
+                            }}
+                          >
+                            ⬇️ Download Video
+                          </a>
+                        </>
                       ) : (
                         <div style={styles.noVideoBox}>No Video Recording Saved</div>
                       )}
@@ -2796,6 +2869,21 @@ function LeaderboardPage() {
                 {selectedCandidate?.sessionId === item.sessionId && (
                   <div style={styles.candidateExpandedDetails}>
                     <div>
+                      <div style={{ display: "flex", flexWrap: "wrap", gap: "16px", marginBottom: "12px", fontSize: "12px", color: "#9ca3af", backgroundColor: "rgba(255,255,255,0.03)", padding: "8px 12px", borderRadius: "8px" }}>
+                        <span>⏱️ <b>Start:</b> {item.startedAt ? new Date(item.startedAt).toLocaleString() : (item.completedAt ? new Date(item.completedAt).toLocaleString() : "N/A")}</span>
+                        <span>⌛ <b>End:</b> {item.endedAt ? new Date(item.endedAt).toLocaleString() : "N/A"}</span>
+                        {item.resumeUrl && (
+                          <a
+                            href={item.resumeUrl.startsWith("http") ? item.resumeUrl : `${API_URL}${item.resumeUrl}`}
+                            target="_blank"
+                            rel="noreferrer"
+                            style={{ color: "#00f5a0", fontWeight: "700", textDecoration: "none" }}
+                          >
+                            📄 View Resume PDF
+                          </a>
+                        )}
+                      </div>
+
                       <h4 style={styles.detailsSectionHeading}>AI Evaluation Notes</h4>
                       <p style={styles.detailsSummaryPara}>{item.summary || "Automated evaluation completed."}</p>
 
@@ -2808,11 +2896,33 @@ function LeaderboardPage() {
                     <div style={{ textAlign: "center" }}>
                       <h4 style={styles.detailsSectionHeading}>Interview Video Archival</h4>
                       {item.videoUrl ? (
-                        <video
-                          src={`${API_URL}${item.videoUrl}`}
-                          controls
-                          style={styles.recordingPlayer}
-                        />
+                        <>
+                          <video
+                            src={item.videoUrl.startsWith("http") ? item.videoUrl : `${API_URL}${item.videoUrl}`}
+                            controls
+                            style={styles.recordingPlayer}
+                          />
+                          <a
+                            href={item.videoUrl.startsWith("http") ? item.videoUrl : `${API_URL}${item.videoUrl}`}
+                            download={`interview_${item.sessionId}.webm`}
+                            target="_blank"
+                            rel="noreferrer"
+                            style={{
+                              display: "inline-block",
+                              marginTop: "8px",
+                              backgroundColor: "rgba(0, 245, 160, 0.15)",
+                              border: "1px solid rgba(0, 245, 160, 0.3)",
+                              color: "#00f5a0",
+                              padding: "6px 12px",
+                              borderRadius: "6px",
+                              fontSize: "12px",
+                              fontWeight: "700",
+                              textDecoration: "none"
+                            }}
+                          >
+                            ⬇️ Download Video
+                          </a>
+                        </>
                       ) : (
                         <div style={styles.noVideoBox}>No Video Recording Saved</div>
                       )}
