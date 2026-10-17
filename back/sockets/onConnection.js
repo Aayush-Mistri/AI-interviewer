@@ -5,6 +5,8 @@ import { buildInterviewPrompt } from "../utils/deepgramPrompt.js";
 import { parseClientMessage } from "../utils/pdfScrap.js";
 import { collectTranscriptLine, evaluateCandidate, appendEvaluationRow } from "../utils/postInterview.js";
 import { appendConversationLine, createConversationHistory, finishConversationHistory } from "../utils/conversationHistory.js";
+import { Evaluation } from "../models.js";
+import mongoose from "mongoose";
 
 setInterval(() => {
   const expiresBefore = Date.now() - 30 * 60 * 1000;
@@ -184,7 +186,8 @@ export function handleSocket(clientWs, req) {
           await historyWrite;
 
           try {
-            const durationSeconds = Math.round((Date.now() - startedAt) / 1000);
+            const endedAt = Date.now();
+            const durationSeconds = Math.round((endedAt - startedAt) / 1000);
             const transcript = transcriptLines.map(({ speaker, text }) => `${speaker}: ${text}`).join("\n") || "No conversation text was captured.";
             const evaluation = evaluateCandidate({
                 resumeText: resumeSession.resumeText,
@@ -196,11 +199,20 @@ export function handleSocket(clientWs, req) {
 
             const evaluationPayload = {
                 type: "EvaluationSaved",
+                sessionId,
+                candidateName: resumeSession.candidateName,
+                jobRole: resumeSession.jobRole,
+                jobId: resumeSession.jobId || null,
+                companyId: resumeSession.companyId || null,
+                companyName: resumeSession.companyDetails?.name || null,
                 score: evaluation.score,
                 questionsAnswered: evaluation.questionsAnswered,
                 file: config.evaluationFile,
                 conversationHistoryFile: historyFile,
                 durationSeconds,
+                startedAt: new Date(startedAt).toISOString(),
+                endedAt: new Date(endedAt).toISOString(),
+                resumeUrl: resumeSession.resumeUrl || null,
                 notes: evaluation.notes,
                 summary: evaluation.summary,
                 scoreBreakdown: evaluation.scoreBreakdown,
@@ -208,9 +220,39 @@ export function handleSocket(clientWs, req) {
                 strengths: evaluation.strengths,
                 weaknesses: evaluation.weaknesses,
                 improvementAdvice: evaluation.improvementAdvice,
+                transcript,
             };
 
             completedEvaluations.set(sessionId, evaluationPayload);
+
+            if (mongoose.connection.readyState === 1) {
+              try {
+                await Evaluation.findOneAndUpdate(
+                  { sessionId },
+                  {
+                    sessionId,
+                    candidateName: resumeSession.candidateName,
+                    jobRole: resumeSession.jobRole,
+                    jobId: resumeSession.jobId || null,
+                    companyId: resumeSession.companyId || null,
+                    companyName: resumeSession.companyDetails?.name || null,
+                    score: evaluation.score,
+                    questionsAnswered: evaluation.questionsAnswered,
+                    summary: evaluation.summary,
+                    strengths: evaluation.strengths,
+                    weaknesses: evaluation.weaknesses,
+                    improvementAdvice: evaluation.improvementAdvice,
+                    transcript,
+                    resumeUrl: resumeSession.resumeUrl || null,
+                    startedAt: new Date(startedAt),
+                    endedAt: new Date(endedAt)
+                  },
+                  { upsert: true, returnDocument: 'after' }
+                );
+              } catch (mongoErr) {
+                console.warn("Mongoose evaluation save notice:", mongoErr.message);
+              }
+            }
 
             await finishConversationHistory(historyFile, {
                 reason: interviewEndedByTimer ? "Time limit reached" : "Interview ended",

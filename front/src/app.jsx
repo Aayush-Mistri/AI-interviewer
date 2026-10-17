@@ -1,5 +1,5 @@
 import React, { useRef, useState, useEffect } from "react";
-import { BrowserRouter, Routes, Route, useNavigate, useParams, Link } from "react-router-dom";
+import { BrowserRouter, Routes, Route, useNavigate, useParams, Link, Navigate } from "react-router-dom";
 
 const AGENT_WS_URL = import.meta.env.VITE_AGENT_WS_URL || "ws://localhost:3001";
 const API_URL = import.meta.env.VITE_API_URL || AGENT_WS_URL.replace(/^ws/, "http");
@@ -213,7 +213,7 @@ function AnnouncementBanner({ onDismiss }) {
 }
 
 // 2. Navigation Bar
-function Navbar({ user, onLogout, onOpenContact, onOpenSearch, onOpenPostJob }) {
+function Navbar({ user, onLogout, onOpenContact, onOpenSearch, onOpenPostJob, isDashboard = false }) {
   const navigate = useNavigate();
   const [dropdownOpen, setDropdownOpen] = useState(null);
 
@@ -222,57 +222,58 @@ function Navbar({ user, onLogout, onOpenContact, onOpenSearch, onOpenPostJob }) 
       <div style={styles.navContainer}>
         {/* Left: Brand Logo & Navigation Links */}
         <div style={styles.navLeft}>
-          <Link to="/" style={styles.navLogoLink}>
+          <Link to={user ? "/home" : "/"} style={styles.navLogoLink}>
             <span style={styles.brandLogo}>VaadIn</span>
             <span style={styles.brandDot}></span>
           </Link>
 
-          <div style={styles.navLinks}>
-            {/* How It Works */}
-            <a href="#how-it-works" style={styles.navLinkAnchor}>
-              How It Works
-            </a>
+          {!isDashboard ? (
+            <div style={styles.navLinks}>
+              {/* How It Works */}
+              <a href="#how-it-works" style={styles.navLinkAnchor}>
+                How It Works
+              </a>
 
-            {/* Core Features */}
-            <a href="#features-section" style={styles.navLinkAnchor}>
-              AI Interviewer Features
-            </a>
+              {/* Core Features */}
+              <a href="#features-section" style={styles.navLinkAnchor}>
+                AI Interviewer Features
+              </a>
 
-            {/* Available Roles */}
-            <a href="#jobs-section" style={styles.navLinkAnchor}>
-              Active Roles
-            </a>
+              {/* Available Roles */}
+              <a href="#jobs-section" style={styles.navLinkAnchor}>
+                Active Roles
+              </a>
 
-            {/* Technical Architecture Dropdown */}
-            <div
-              style={styles.navItemWithDropdown}
-              onMouseEnter={() => setDropdownOpen("tech")}
-              onMouseLeave={() => setDropdownOpen(null)}
-            >
-              <button style={styles.navLinkButton}>
-                AI Architecture <ChevronDownIcon />
-              </button>
-              {dropdownOpen === "tech" && (
-                <div style={styles.dropdownMenu}>
-                  <div style={styles.dropdownItem} onClick={() => navigate("/")}>
-                    <div style={styles.dropdownTitle}>Context Injection (No RAG Loss)</div>
-                    <div style={styles.dropdownDesc}>Full resume tokens injected directly into prompt</div>
+              {/* Technical Architecture Dropdown */}
+              <div
+                style={styles.navItemWithDropdown}
+                onMouseEnter={() => setDropdownOpen("tech")}
+                onMouseLeave={() => setDropdownOpen(null)}
+              >
+                <button style={styles.navLinkButton}>
+                  AI Architecture <ChevronDownIcon />
+                </button>
+                {dropdownOpen === "tech" && (
+                  <div style={styles.dropdownMenu}>
+                    <div style={styles.dropdownItem} onClick={() => navigate("/")}>
+                      <div style={styles.dropdownTitle}>Context Injection (No RAG Loss)</div>
+                      <div style={styles.dropdownDesc}>Full resume tokens injected directly into prompt</div>
+                    </div>
+                    <div style={styles.dropdownItem} onClick={() => navigate("/")}>
+                      <div style={styles.dropdownTitle}>Real-Time Audio Loop</div>
+                      <div style={styles.dropdownDesc}>Nova-3 STT + GPT-4o Brain + Aura-2 TTS</div>
+                    </div>
+                    <div style={styles.dropdownItem} onClick={() => navigate("/")}>
+                      <div style={styles.dropdownTitle}>Qualitative Scoring Rubrics</div>
+                      <div style={styles.dropdownDesc}>Automated technical feedback out of 100</div>
+                    </div>
                   </div>
-                  <div style={styles.dropdownItem} onClick={() => navigate("/")}>
-                    <div style={styles.dropdownTitle}>Real-Time Audio Loop</div>
-                    <div style={styles.dropdownDesc}>Nova-3 STT + GPT-4o Brain + Aura-2 TTS</div>
-                  </div>
-                  <div style={styles.dropdownItem} onClick={() => navigate("/")}>
-                    <div style={styles.dropdownTitle}>Qualitative Scoring Rubrics</div>
-                    <div style={styles.dropdownDesc}>Automated technical feedback out of 100</div>
-                  </div>
-                </div>
-              )}
+                )}
+              </div>
             </div>
-
-            {/* Company Specific Navigation */}
-            {user?.isCompany && (
-              <>
+          ) : (
+            user?.isCompany && (
+              <div style={styles.navLinks}>
                 <Link to="/leaderboard" style={styles.navCompanyLink}>
                   Leaderboard 🏆
                 </Link>
@@ -290,9 +291,9 @@ function Navbar({ user, onLogout, onOpenContact, onOpenSearch, onOpenPostJob }) 
                 >
                   + Post Role
                 </button>
-              </>
-            )}
-          </div>
+              </div>
+            )
+          )}
         </div>
 
         {/* Right: Search, Contact Us, Login, Sign Up */}
@@ -525,7 +526,7 @@ function ResourcesSection() {
       title: "Context Injection vs RAG in Resume Screening: Why Full Context Outperforms Vector DBs",
       author: "VaadIn AI Team",
       date: "Engineering Whitepaper",
-      avatar: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100&h=100&fit=crop&crop=faces",
+      image: "/giff/473262431784525.jpg",
       active: true, // highlighted card
     },
     {
@@ -535,7 +536,7 @@ function ResourcesSection() {
       title: "Sub-300ms Audio Latency: WebSocket PCM16 Streaming for Human-like Interview Turn-Taking",
       author: "Audio Systems Lab",
       date: "System Architecture",
-      avatar: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100&h=100&fit=crop&crop=faces",
+      image: "/giff/1597.jpg",
       active: false,
     },
     {
@@ -545,7 +546,7 @@ function ResourcesSection() {
       title: "Eliminating Interviewer Bias: How Objective LLM Rubrics Rate Problem-Solving Depth",
       author: "Talent AI Research",
       date: "Hiring Report",
-      avatar: "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=100&h=100&fit=crop&crop=faces",
+      image: "/giff/473262431784525.jpg",
       active: false,
     },
   ];
@@ -572,6 +573,13 @@ function ResourcesSection() {
                 }}
               >
                 <div style={styles.resourceCardVisual}>
+                  {item.image && (
+                    <img
+                      src={item.image}
+                      alt={item.title}
+                      style={{ position: "absolute", width: "100%", height: "100%", objectFit: "cover", opacity: 0.35 }}
+                    />
+                  )}
                   <div style={styles.resourceCardWatermark}>VaadIn</div>
                   <div style={styles.resourceCardBadgeOverlay}>
                     <span style={styles.launchTag}>⚡ AI INTERVIEWER CORE</span>
@@ -712,10 +720,10 @@ function Footer() {
           <div style={styles.footerCol}>
             <h5 style={styles.footerColTitle}>For Companies</h5>
             <ul style={styles.footerList}>
+              <li><Link to="/company/jobs" style={styles.footerLink}>Company Jobs Dashboard 💼</Link></li>
               <li><Link to="/signup" style={styles.footerLink}>Company Registration</Link></li>
               <li><Link to="/post-job" style={styles.footerLink}>Post Custom AI Roles</Link></li>
               <li><Link to="/leaderboard" style={styles.footerLink}>Candidate Leaderboard 🏆</Link></li>
-              <li><a href="#how-it-works" style={styles.footerLink}>Custom Evaluation Rubrics</a></li>
             </ul>
           </div>
 
@@ -875,17 +883,123 @@ function PostJobModal({ isOpen, onClose, onJobCreated, user }) {
   );
 }
 
+// 5. Features Grid Section (Specifically for our AI Interviewer)
+function FeaturesSection() {
+  return (
+    <section id="features-section" style={styles.featuresSection}>
+      <div style={styles.featuresInner}>
+        <div style={styles.sectionHeaderCentered}>
+          <div style={styles.badgeNeon}>⚡ CORE PLATFORM CAPABILITIES</div>
+          <h2 style={styles.featuresHeadline}>Features Designed for AI Technical Interviewing</h2>
+          <p style={styles.featuresSubtitle}>
+            Built from the ground up for technical evaluations, our voice agent stack delivers
+            unmatched screening precision, objective scoring, and complete recruiter visibility.
+          </p>
+        </div>
+
+        <div style={styles.featuresGrid}>
+          <div style={styles.featureCard}>
+            <div style={styles.featureIconBox}>
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#00f5a0" strokeWidth="2">
+                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+                <polyline points="14 2 14 8 20 8" />
+                <line x1="16" y1="13" x2="8" y2="13" />
+                <line x1="16" y1="17" x2="8" y2="17" />
+              </svg>
+            </div>
+            <h3 style={styles.featureTitle}>Resume Context Injection</h3>
+            <p style={styles.featureDesc}>
+              Rather than generic chatbot quizzes, the candidate's parsed PDF resume is directly injected
+              into the AI interviewer's system prompt to probe real projects, tools, and technical decisions.
+            </p>
+          </div>
+
+          <div style={styles.featureCard}>
+            <div style={styles.featureIconBox}>
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#00f5a0" strokeWidth="2">
+                <path d="M12 2v20M17 5v14M7 9v6M22 10v4M2 10v4" />
+              </svg>
+            </div>
+            <h3 style={styles.featureTitle}>Real-Time Conversational Voice</h3>
+            <p style={styles.featureDesc}>
+              Microphone audio streams through WebSockets to a synchronized STT and TTS voice loop.
+              Built-in barge-in handling and rapid turn-taking feel like speaking to a real engineering manager.
+            </p>
+          </div>
+
+          <div style={styles.featureCard}>
+            <div style={styles.featureIconBox}>
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#00f5a0" strokeWidth="2">
+                <polygon points="23 7 16 12 23 17 23 7" />
+                <rect x="1" y="5" width="15" height="14" rx="2" ry="2" />
+              </svg>
+            </div>
+            <h3 style={styles.featureTitle}>Video & Audio Session Archival</h3>
+            <p style={styles.featureDesc}>
+              Captures candidate camera video and audio simultaneously. Hiring managers can review full
+              session recordings alongside time-synced transcripts directly inside the candidate portal.
+            </p>
+          </div>
+
+          <div style={styles.featureCard}>
+            <div style={styles.featureIconBox}>
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#00f5a0" strokeWidth="2">
+                <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" />
+                <polyline points="22 4 12 14.01 9 11.01" />
+              </svg>
+            </div>
+            <h3 style={styles.featureTitle}>Instant Objective Rubric Scoring</h3>
+            <p style={styles.featureDesc}>
+              Post-interview analysis calculates a fair score out of 100 based on technical depth,
+              problem-solving clarity, and resume verification—eliminating unconscious interviewer bias.
+            </p>
+          </div>
+
+          <div style={styles.featureCard}>
+            <div style={styles.featureIconBox}>
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#00f5a0" strokeWidth="2">
+                <rect x="2" y="3" width="20" height="14" rx="2" ry="2" />
+                <line x1="8" y1="21" x2="16" y2="21" />
+                <line x1="12" y1="17" x2="12" y2="21" />
+              </svg>
+            </div>
+            <h3 style={styles.featureTitle}>Custom Company Rubrics & Probes</h3>
+            <p style={styles.featureDesc}>
+              Hiring teams can post openings with special prompt guidelines—instructing the AI on specific
+              frameworks, concurrency questions, or architecture challenges to grill candidates on.
+            </p>
+          </div>
+
+          <div style={styles.featureCard}>
+            <div style={styles.featureIconBox}>
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#00f5a0" strokeWidth="2">
+                <line x1="18" y1="20" x2="18" y2="10" />
+                <line x1="12" y1="20" x2="12" y2="4" />
+                <line x1="6" y1="20" x2="6" y2="14" />
+              </svg>
+            </div>
+            <h3 style={styles.featureTitle}>Recruiter Leaderboards & Excel Export</h3>
+            <p style={styles.featureDesc}>
+              Rank candidates automatically by overall score marks. Review candidate summaries, examine
+              full conversation transcripts, and export evaluation data into spreadsheets effortlessly.
+            </p>
+          </div>
+        </div>
+      </div>
+    </section>
+  );
+}
+
 // ==========================================
-// Main Landing Page Component (Unified Home)
+// Marketing Landing Page (Unauthenticated)
 // ==========================================
-function HomePage() {
+function LandingPage() {
   const navigate = useNavigate();
-  const [allJobs, setAllJobs] = useState(DEFAULT_JOBS);
-  const [showBanner, setShowBanner] = useState(true);
   const [user, setUser] = useState(getStoredUser());
+  const [showBanner, setShowBanner] = useState(true);
   const [isContactOpen, setIsContactOpen] = useState(false);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
-  const [isPostJobOpen, setIsPostJobOpen] = useState(false);
+  const [allJobs, setAllJobs] = useState(DEFAULT_JOBS);
 
   useEffect(() => {
     const handleStorage = () => setUser(getStoredUser());
@@ -893,16 +1007,11 @@ function HomePage() {
     return () => window.removeEventListener("storage", handleStorage);
   }, []);
 
-  const handleLogout = () => {
-    localStorage.removeItem("user");
-    setUser(null);
-    window.dispatchEvent(new Event("storage"));
-    navigate("/");
-  };
-
-  const handleJobCreated = (newJob) => {
-    setAllJobs((prev) => [newJob, ...prev]);
-  };
+  useEffect(() => {
+    if (user) {
+      navigate("/home", { replace: true });
+    }
+  }, [user, navigate]);
 
   useEffect(() => {
     async function fetchJobs() {
@@ -910,7 +1019,14 @@ function HomePage() {
         const res = await fetch(`${API_URL}/api/jobs`);
         const data = await res.json();
         if (data?.jobs?.length) {
-          setAllJobs([...data.jobs, ...DEFAULT_JOBS]);
+          const merged = [...data.jobs, ...DEFAULT_JOBS];
+          const uniqueMap = new Map();
+          merged.forEach((j) => {
+            if (j.id && !uniqueMap.has(j.id)) {
+              uniqueMap.set(j.id, j);
+            }
+          });
+          setAllJobs(Array.from(uniqueMap.values()));
         }
       } catch (e) {
         console.error("Could not fetch custom jobs", e);
@@ -919,18 +1035,23 @@ function HomePage() {
     fetchJobs();
   }, []);
 
+  const handleLogout = () => {
+    localStorage.removeItem("user");
+    setUser(null);
+    window.dispatchEvent(new Event("storage"));
+  };
+
+  if (user) return null;
+
   return (
     <div style={styles.pageContainer}>
-      {/* Top Banner (India & Global, No San Francisco, No Date) */}
       {showBanner && <AnnouncementBanner onDismiss={() => setShowBanner(false)} />}
 
-      {/* Navigation */}
       <Navbar
-        user={user}
+        user={null}
         onLogout={handleLogout}
         onOpenContact={() => setIsContactOpen(true)}
         onOpenSearch={() => setIsSearchOpen(true)}
-        onOpenPostJob={() => setIsPostJobOpen(true)}
       />
 
       {/* Hero Section */}
@@ -952,37 +1073,18 @@ function HomePage() {
           </p>
 
           <div style={styles.heroActionButtons}>
-            {user?.isCompany ? (
-              <>
-                <button
-                  style={styles.heroPrimaryButton}
-                  onClick={() => setIsPostJobOpen(true)}
-                >
-                  + Post New Role
-                </button>
-                <button
-                  style={styles.heroSecondaryButton}
-                  onClick={() => navigate("/leaderboard")}
-                >
-                  View Leaderboard 🏆
-                </button>
-                <a href="#jobs-section" style={styles.heroSecondaryButton}>
-                  Browse Openings ({allJobs.length})
-                </a>
-              </>
-            ) : (
-              <>
-                <a href="#jobs-section" style={styles.heroPrimaryButton}>
-                  Take Live Interview →
-                </a>
-                <button
-                  style={styles.heroSecondaryButton}
-                  onClick={() => navigate(user ? "#jobs-section" : "/signup")}
-                >
-                  {user ? `Browse Roles (${allJobs.length})` : "For Hiring Companies"}
-                </button>
-              </>
-            )}
+            <button
+              style={styles.heroPrimaryButton}
+              onClick={() => navigate("/signup")}
+            >
+              Get Started Free →
+            </button>
+            <button
+              style={styles.heroSecondaryButton}
+              onClick={() => navigate("/login")}
+            >
+              Sign In to Account
+            </button>
           </div>
 
           {/* Quick Metrics Ticker */}
@@ -1010,168 +1112,186 @@ function HomePage() {
         </div>
       </section>
 
-      {/* How It Works (4-Step Loop) */}
       <HowItWorksSection />
+      <FeaturesSection />
 
-      {/* Features Grid Section (Specifically for our AI Interviewer) */}
-      <section id="features-section" style={styles.featuresSection}>
-        <div style={styles.featuresInner}>
+      {/* Roles Preview Section for Unauthenticated Users */}
+      <section id="jobs-section" style={styles.jobsSection}>
+        <div style={styles.jobsInner}>
           <div style={styles.sectionHeaderCentered}>
-            <div style={styles.badgeNeon}>⚡ CORE PLATFORM CAPABILITIES</div>
-            <h2 style={styles.featuresHeadline}>Features Designed for AI Technical Interviewing</h2>
-            <p style={styles.featuresSubtitle}>
-              Built from the ground up for technical evaluations, our voice agent stack delivers
-              unmatched screening precision, objective scoring, and complete recruiter visibility.
+            <div style={styles.badgeNeon}>🎯 OPEN TECHNICAL ROLES</div>
+            <h2 style={styles.jobsHeadline}>Explore Live Positions</h2>
+            <p style={styles.jobsSubtitle}>
+              Sign up or log in to take automated AI voice technical screening for any role below.
             </p>
           </div>
 
-          <div style={styles.featuresGrid}>
-            {/* Feature 1 */}
-            <div style={styles.featureCard}>
-              <div style={styles.featureIconBox}>
-                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#00f5a0" strokeWidth="2">
-                  <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
-                  <polyline points="14 2 14 8 20 8" />
-                  <line x1="16" y1="13" x2="8" y2="13" />
-                  <line x1="16" y1="17" x2="8" y2="17" />
-                </svg>
-              </div>
-              <h3 style={styles.featureTitle}>Resume Context Injection</h3>
-              <p style={styles.featureDesc}>
-                Rather than generic chatbot quizzes, the candidate's parsed PDF resume is directly injected
-                into the AI interviewer's system prompt to probe real projects, tools, and technical decisions.
-              </p>
-            </div>
+          <div style={styles.jobCardsGrid}>
+            {allJobs.map((job) => (
+              <div key={job.id} style={styles.jobCardItem}>
+                <div style={{ ...styles.jobCardTopGlow, background: job.gradient || "linear-gradient(135deg, #00f5a0, #00b4d8)" }} />
+                <div style={styles.jobCardHeader}>
+                  <div>
+                    <h3 style={styles.jobRoleName}>{job.role}</h3>
+                    <span style={styles.jobCompanyTag}>
+                      🏢 {job.companyName || job.companyDetails?.name || "VaadIn Partner"}
+                    </span>
+                  </div>
+                  <span style={styles.jobLivePill}>AI Ready</span>
+                </div>
 
-            {/* Feature 2 */}
-            <div style={styles.featureCard}>
-              <div style={styles.featureIconBox}>
-                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#00f5a0" strokeWidth="2">
-                  <path d="M12 2v20M17 5v14M7 9v6M22 10v4M2 10v4" />
-                </svg>
-              </div>
-              <h3 style={styles.featureTitle}>Real-Time Conversational Voice</h3>
-              <p style={styles.featureDesc}>
-                Microphone audio streams through WebSockets to a synchronized STT and TTS voice loop.
-                Built-in barge-in handling and rapid turn-taking feel like speaking to a real engineering manager.
-              </p>
-            </div>
+                <p style={styles.jobDescriptionText}>{job.description}</p>
 
-            {/* Feature 3 */}
-            <div style={styles.featureCard}>
-              <div style={styles.featureIconBox}>
-                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#00f5a0" strokeWidth="2">
-                  <polygon points="23 7 16 12 23 17 23 7" />
-                  <rect x="1" y="5" width="15" height="14" rx="2" ry="2" />
-                </svg>
-              </div>
-              <h3 style={styles.featureTitle}>Video & Audio Session Archival</h3>
-              <p style={styles.featureDesc}>
-                Captures candidate camera video and audio simultaneously. Hiring managers can review full
-                session recordings alongside time-synced transcripts directly inside the candidate portal.
-              </p>
-            </div>
+                <div style={styles.jobReqsWrap}>
+                  {(Array.isArray(job.requirements) ? job.requirements : [job.requirements]).map((req) => (
+                    <span key={req} style={styles.jobReqTag}>
+                      {req}
+                    </span>
+                  ))}
+                </div>
 
-            {/* Feature 4 */}
-            <div style={styles.featureCard}>
-              <div style={styles.featureIconBox}>
-                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#00f5a0" strokeWidth="2">
-                  <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" />
-                  <polyline points="22 4 12 14.01 9 11.01" />
-                </svg>
+                <button
+                  style={styles.jobApplyBtn}
+                  onClick={() => navigate("/signup")}
+                >
+                  Sign Up to Take Screening →
+                </button>
               </div>
-              <h3 style={styles.featureTitle}>Instant Objective Rubric Scoring</h3>
-              <p style={styles.featureDesc}>
-                Post-interview analysis calculates a fair score out of 100 based on technical depth,
-                problem-solving clarity, and resume verification—eliminating unconscious interviewer bias.
-              </p>
-            </div>
-
-            {/* Feature 5 */}
-            <div style={styles.featureCard}>
-              <div style={styles.featureIconBox}>
-                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#00f5a0" strokeWidth="2">
-                  <rect x="2" y="3" width="20" height="14" rx="2" ry="2" />
-                  <line x1="8" y1="21" x2="16" y2="21" />
-                  <line x1="12" y1="17" x2="12" y2="21" />
-                </svg>
-              </div>
-              <h3 style={styles.featureTitle}>Custom Company Rubrics & Probes</h3>
-              <p style={styles.featureDesc}>
-                Hiring teams can post openings with special prompt guidelines—instructing the AI on specific
-                frameworks, concurrency questions, or architecture challenges to grill candidates on.
-              </p>
-            </div>
-
-            {/* Feature 6 */}
-            <div style={styles.featureCard}>
-              <div style={styles.featureIconBox}>
-                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#00f5a0" strokeWidth="2">
-                  <line x1="18" y1="20" x2="18" y2="10" />
-                  <line x1="12" y1="20" x2="12" y2="4" />
-                  <line x1="6" y1="20" x2="6" y2="14" />
-                </svg>
-              </div>
-              <h3 style={styles.featureTitle}>Recruiter Leaderboards & Excel Export</h3>
-              <p style={styles.featureDesc}>
-                Rank candidates automatically by overall score marks. Review candidate summaries, examine
-                full conversation transcripts, and export evaluation data into spreadsheets effortlessly.
-              </p>
-            </div>
+            ))}
           </div>
         </div>
       </section>
 
-      {/* Available Technical Roles (Our App Data) */}
-      <section id="jobs-section" style={styles.jobsSection}>
-        <div style={styles.jobsInner}>
-          {user && (
-            <div style={styles.userCommandCenter}>
-              <div style={styles.userCommandHeader}>
-                <div style={{ display: "flex", alignItems: "center", gap: "14px" }}>
-                  <div style={styles.userCommandAvatar}>
-                    {user.isCompany ? "🏢" : "👤"}
-                  </div>
-                  <div>
-                    <div style={styles.userCommandTitle}>
-                      {user.isCompany ? (user.companyName || user.name) : user.name}
-                      <span style={styles.userRoleTag}>
-                        {user.isCompany ? "Hiring Company Portal" : "Candidate Account"}
-                      </span>
-                    </div>
-                    <div style={styles.userCommandSub}>
-                      {user.isCompany
-                        ? "Active company recruiter account. You can post roles with custom prompt rubrics, review live submissions, and view candidate leaderboard marks."
-                        : "Candidate account. Choose any technical role below to upload your PDF resume and begin your 2-minute voice screening."}
-                    </div>
-                  </div>
-                </div>
+      <ResourcesSection />
+      <CtaBannerSection onAction={() => navigate("/signup")} />
+      <Footer />
 
-                <div style={styles.userCommandActions}>
-                  {user.isCompany ? (
-                    <>
-                      <button
-                        style={styles.postJobCommandBtn}
-                        onClick={() => setIsPostJobOpen(true)}
-                      >
-                        + Post New Role
-                      </button>
-                      <button
-                        style={styles.leaderboardCommandBtn}
-                        onClick={() => navigate("/leaderboard")}
-                      >
-                        Candidate Leaderboard 🏆
-                      </button>
-                    </>
-                  ) : (
-                    <a href="#jobs-section" style={styles.postJobCommandBtn}>
-                      Browse All Openings ({allJobs.length})
-                    </a>
-                  )}
+      <ContactModal isOpen={isContactOpen} onClose={() => setIsContactOpen(false)} />
+      <SearchModal isOpen={isSearchOpen} onClose={() => setIsSearchOpen(false)} jobs={allJobs} />
+    </div>
+  );
+}
+
+// ==========================================
+// Authenticated Home Page (User Dashboard)
+// ==========================================
+function HomePage() {
+  const navigate = useNavigate();
+  const [allJobs, setAllJobs] = useState(DEFAULT_JOBS);
+  const [showBanner, setShowBanner] = useState(true);
+  const [user, setUser] = useState(getStoredUser());
+  const [isContactOpen, setIsContactOpen] = useState(false);
+  const [isSearchOpen, setIsSearchOpen] = useState(false);
+  const [isPostJobOpen, setIsPostJobOpen] = useState(false);
+
+  useEffect(() => {
+    const handleStorage = () => setUser(getStoredUser());
+    window.addEventListener("storage", handleStorage);
+    return () => window.removeEventListener("storage", handleStorage);
+  }, []);
+
+  useEffect(() => {
+    if (!user) {
+      navigate("/login", { replace: true });
+    }
+  }, [user, navigate]);
+
+  const handleLogout = () => {
+    localStorage.removeItem("user");
+    setUser(null);
+    window.dispatchEvent(new Event("storage"));
+    navigate("/");
+  };
+
+  const handleJobCreated = (newJob) => {
+    setAllJobs((prev) => [newJob, ...prev]);
+  };
+
+  useEffect(() => {
+    async function fetchJobs() {
+      try {
+        const res = await fetch(`${API_URL}/api/jobs`);
+        const data = await res.json();
+        if (data?.jobs?.length) {
+          setAllJobs([...data.jobs, ...DEFAULT_JOBS]);
+        }
+      } catch (e) {
+        console.error("Could not fetch custom jobs", e);
+      }
+    }
+    fetchJobs();
+  }, []);
+
+  if (!user) return null;
+
+  return (
+    <div style={styles.pageContainer}>
+      <Navbar
+        user={user}
+        onLogout={handleLogout}
+        onOpenContact={() => setIsContactOpen(true)}
+        onOpenSearch={() => setIsSearchOpen(true)}
+        onOpenPostJob={() => setIsPostJobOpen(true)}
+        isDashboard={true}
+      />
+
+      <section style={{ ...styles.jobsSection, paddingTop: "40px", minHeight: "80vh" }}>
+        <div style={styles.jobsInner}>
+          {/* User Command Center */}
+          <div style={styles.userCommandCenter}>
+            <div style={styles.userCommandHeader}>
+              <div style={{ display: "flex", alignItems: "center", gap: "14px" }}>
+                <div style={styles.userCommandAvatar}>
+                  {user.isCompany ? "🏢" : "👤"}
+                </div>
+                <div>
+                  <div style={styles.userCommandTitle}>
+                    {user.isCompany ? (user.companyName || user.name) : user.name}
+                    <span style={styles.userRoleTag}>
+                      {user.isCompany ? "Hiring Company Portal" : "Candidate Account"}
+                    </span>
+                  </div>
+                  <div style={styles.userCommandSub}>
+                    {user.isCompany
+                      ? "Active company recruiter account. You can post roles with custom prompt rubrics, review live submissions, and view candidate leaderboard marks."
+                      : "Candidate account. Choose any technical role below to upload your PDF resume and begin your 2-minute voice screening."}
+                  </div>
                 </div>
               </div>
+
+              <div style={styles.userCommandActions}>
+                {user.isCompany ? (
+                  <>
+                    <button
+                      style={styles.postJobCommandBtn}
+                      onClick={() => navigate("/company/jobs")}
+                    >
+                      Jobs Dashboard 💼
+                    </button>
+                    <button
+                      style={styles.postJobCommandBtn}
+                      onClick={() => setIsPostJobOpen(true)}
+                    >
+                      + Post New Role
+                    </button>
+                    <button
+                      style={styles.leaderboardCommandBtn}
+                      onClick={() => navigate("/leaderboard")}
+                    >
+                      Candidate Leaderboard 🏆
+                    </button>
+                  </>
+                ) : (
+                  <button
+                    style={styles.postJobCommandBtn}
+                    onClick={() => setIsSearchOpen(true)}
+                  >
+                    🔍 Search Roles
+                  </button>
+                )}
+              </div>
             </div>
-          )}
+          </div>
 
           <div style={styles.sectionHeaderCentered}>
             <div style={styles.badgeNeon}>🎯 LIVE APPLICATION ROLES</div>
@@ -1223,16 +1343,6 @@ function HomePage() {
         </div>
       </section>
 
-      {/* Resources & Insights */}
-      <ResourcesSection />
-
-      {/* CTA Section */}
-      <CtaBannerSection onAction={() => navigate(user?.isCompany ? "/post-job" : "/signup")} />
-
-      {/* Footer */}
-      <Footer />
-
-      {/* Interactive Modals */}
       <ContactModal isOpen={isContactOpen} onClose={() => setIsContactOpen(false)} />
       <SearchModal isOpen={isSearchOpen} onClose={() => setIsSearchOpen(false)} jobs={allJobs} />
       <PostJobModal
@@ -1245,15 +1355,19 @@ function HomePage() {
   );
 }
 
-// ==========================================
-// Authentication: Login Page
-// ==========================================
+
 function LoginPage() {
   const navigate = useNavigate();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    if (getStoredUser()) {
+      navigate("/home", { replace: true });
+    }
+  }, [navigate]);
 
   async function handleLogin(e) {
     if (e) e.preventDefault();
@@ -1274,7 +1388,7 @@ function LoginPage() {
 
       localStorage.setItem("user", JSON.stringify(data.user));
       window.dispatchEvent(new Event("storage"));
-      navigate("/");
+      navigate("/home");
     } catch (err) {
       setError(err.message);
     } finally {
@@ -1355,6 +1469,12 @@ function SignupPage() {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
+  useEffect(() => {
+    if (getStoredUser()) {
+      navigate("/home", { replace: true });
+    }
+  }, [navigate]);
+
   async function handleSignup(e) {
     if (e) e.preventDefault();
     setError("");
@@ -1382,7 +1502,7 @@ function SignupPage() {
 
       localStorage.setItem("user", JSON.stringify(data.user));
       window.dispatchEvent(new Event("storage"));
-      navigate("/");
+      navigate("/home");
     } catch (err) {
       setError(err.message);
     } finally {
@@ -1550,7 +1670,7 @@ function CompanyJobPage() {
       if (!res.ok) throw new Error(data.error || "Could not post job.");
 
       setNotice("Role successfully published! Custom prompt instructions injected into the AI interviewer.");
-      setTimeout(() => navigate("/"), 1500);
+      setTimeout(() => navigate("/home"), 1500);
     } catch (err) {
       setError(err.message);
     } finally {
@@ -1773,6 +1893,7 @@ function InterviewPage() {
   const videoElementRef = useRef(null);
   const playTimeRef = useRef(0);
   const evaluationRef = useRef(null);
+  const isUploadingVideoRef = useRef(false);
 
   const [connected, setConnected] = useState(false);
   const [timeLeft, setTimeLeft] = useState(120);
@@ -1858,16 +1979,41 @@ function InterviewPage() {
   }
 
   async function uploadVideoBlob() {
-    if (!videoChunksRef.current.length) return;
+    if (isUploadingVideoRef.current) return;
+    isUploadingVideoRef.current = true;
+
+    // Ensure all mediaRecorder chunks are flushed
+    if (mediaRecorderRef.current && mediaRecorderRef.current.state !== "inactive") {
+      await new Promise((resolve) => {
+        mediaRecorderRef.current.onstop = resolve;
+        mediaRecorderRef.current.stop();
+      });
+    }
+
+    if (!videoChunksRef.current.length) {
+      isUploadingVideoRef.current = false;
+      return;
+    }
+
     const videoBlob = new Blob(videoChunksRef.current, { type: "video/webm" });
-    const formData = new FormData();
-    formData.append("video", videoBlob, `interview_${sessionId}.webm`);
-    formData.append("sessionId", sessionId);
 
     try {
-      await fetch(`${API_URL}/api/upload-video`, { method: "POST", body: formData });
+      // Send video file directly to backend API (/api/upload-video)
+      // Node.js server uploads directly to Backblaze B2 without browser CORS blocking
+      const formData = new FormData();
+      formData.append("video", videoBlob, `interview_${sessionId}.webm`);
+      formData.append("sessionId", sessionId);
+
+      const response = await fetch(`${API_URL}/api/upload-video`, {
+        method: "POST",
+        body: formData,
+      });
+      const data = await response.json();
+      console.log("Uploaded video response:", data);
     } catch (err) {
       console.error("Video upload error:", err);
+    } finally {
+      isUploadingVideoRef.current = false;
     }
   }
 
@@ -1880,9 +2026,10 @@ function InterviewPage() {
   }
 
   async function startMediaCapture() {
+    // 360p resolution capture (640x360, 24fps)
     const stream = await navigator.mediaDevices.getUserMedia({
       audio: true,
-      video: { width: { max: 320 }, height: { max: 240 }, frameRate: { max: 15 } },
+      video: { width: { ideal: 640 }, height: { ideal: 360 }, frameRate: { ideal: 24 } },
     });
     streamRef.current = stream;
 
@@ -1893,8 +2040,8 @@ function InterviewPage() {
     try {
       videoChunksRef.current = [];
       const mediaRecorder = new MediaRecorder(stream, {
-        mimeType: "video/webm;codecs=vp8,opus",
-        videoBitsPerSecond: 100000,
+        mimeType: MediaRecorder.isTypeSupported("video/webm;codecs=vp8,opus") ? "video/webm;codecs=vp8,opus" : "video/webm",
+        videoBitsPerSecond: 250000, // optimized for 360p quality
       });
       mediaRecorder.ondataavailable = (e) => {
         if (e.data.size > 0) videoChunksRef.current.push(e.data);
@@ -2114,16 +2261,52 @@ function EvaluationPage() {
           </div>
         )}
 
+        <div style={{ margin: "16px 0", padding: "12px", backgroundColor: "rgba(255, 255, 255, 0.04)", borderRadius: "10px", fontSize: "13px", color: "#cbd5e1", display: "flex", flexWrap: "wrap", justifyContent: "space-between", gap: "10px" }}>
+          <span>⏱️ <b>Start:</b> {evaluation.startedAt ? new Date(evaluation.startedAt).toLocaleTimeString() : "N/A"}</span>
+          <span>⌛ <b>End:</b> {evaluation.endedAt ? new Date(evaluation.endedAt).toLocaleTimeString() : "N/A"}</span>
+          {evaluation.resumeUrl && (
+            <a
+              href={evaluation.resumeUrl.startsWith("http") ? evaluation.resumeUrl : `${API_URL}${evaluation.resumeUrl}`}
+              target="_blank"
+              rel="noreferrer"
+              style={{ color: "#00f5a0", fontWeight: "700", textDecoration: "none" }}
+            >
+              📄 View Resume PDF
+            </a>
+          )}
+        </div>
+
         {evaluation.videoUrl && (
           <div style={{ margin: "20px 0", textAlign: "center" }}>
             <h4 style={{ fontSize: "13px", color: "#38bdf8", marginBottom: "8px" }}>
               📹 Synchronized Video Recording
             </h4>
             <video
-              src={`${API_URL}${evaluation.videoUrl}`}
+              src={evaluation.videoUrl.startsWith("http") ? evaluation.videoUrl : `${API_URL}${evaluation.videoUrl}`}
               controls
               style={styles.evalVideoPlayer}
             />
+            <div style={{ marginTop: "10px" }}>
+              <a
+                href={evaluation.videoUrl.startsWith("http") ? evaluation.videoUrl : `${API_URL}${evaluation.videoUrl}`}
+                download={`interview_${sessionId}.webm`}
+                target="_blank"
+                rel="noreferrer"
+                style={{
+                  display: "inline-block",
+                  backgroundColor: "rgba(0, 245, 160, 0.15)",
+                  border: "1px solid rgba(0, 245, 160, 0.3)",
+                  color: "#00f5a0",
+                  padding: "6px 16px",
+                  borderRadius: "6px",
+                  fontSize: "12px",
+                  fontWeight: "700",
+                  textDecoration: "none"
+                }}
+              >
+                ⬇️ Download Video Recording
+              </a>
+            </div>
           </div>
         )}
 
@@ -2156,26 +2339,435 @@ function EvaluationPage() {
 }
 
 // ==========================================
+// Company Jobs Dashboard (`/company/jobs`)
+// ==========================================
+function CompanyJobsPage() {
+  const navigate = useNavigate();
+  const [user, setUser] = useState(getStoredUser());
+  const [jobs, setJobs] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+  const [isPostJobOpen, setIsPostJobOpen] = useState(false);
+
+  useEffect(() => {
+    const handleStorage = () => setUser(getStoredUser());
+    window.addEventListener("storage", handleStorage);
+    return () => window.removeEventListener("storage", handleStorage);
+  }, []);
+
+  const userId = user?.id;
+  const userEmail = user?.email;
+  const isCompany = user?.isCompany;
+
+  useEffect(() => {
+    async function fetchCompanyJobs() {
+      if (!isCompany || (!userId && !userEmail)) {
+        setError("Access Restricted: Only verified company accounts can access the recruiter jobs dashboard.");
+        setLoading(false);
+        return;
+      }
+      try {
+        setLoading(true);
+        const res = await fetch(`${API_URL}/api/company/jobs?companyId=${encodeURIComponent(userId || "")}&userEmail=${encodeURIComponent(userEmail || "")}`);
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || "Could not fetch company jobs.");
+        setJobs(data.jobs || []);
+      } catch (err) {
+        setError(err.message);
+      } finally {
+        setLoading(false);
+      }
+    }
+    fetchCompanyJobs();
+  }, [userId, userEmail, isCompany]);
+
+  async function handleToggleJobStatus(jobId, currentStatus) {
+    const nextStatus = currentStatus === "closed" ? "active" : "closed";
+    try {
+      const res = await fetch(`${API_URL}/api/company/jobs/${jobId}/status`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ status: nextStatus, companyId: user?.id }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Could not update status.");
+      setJobs((prev) => prev.map((j) => (j.id === jobId ? { ...j, status: nextStatus } : j)));
+    } catch (e) {
+      alert(e.message);
+    }
+  }
+
+  if (!user?.isCompany) {
+    return (
+      <div style={styles.authContainer}>
+        <div style={styles.authCardBox}>
+          <span style={{ fontSize: "40px" }}>🔒</span>
+          <h2 style={{ color: "#ffffff", margin: "16px 0 8px" }}>Company Recruiter Access Only</h2>
+          <p style={{ color: "#9ca3af", fontSize: "14px", margin: "0 0 24px" }}>
+            The job management suite is strictly restricted to registered company recruiters.
+          </p>
+          <button style={styles.authSubmitBtn} onClick={() => navigate("/")}>
+            Return to Platform
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div style={styles.pageContainer}>
+      <Navbar
+        user={user}
+        onLogout={() => {
+          localStorage.removeItem("user");
+          navigate("/");
+        }}
+        onOpenContact={() => {}}
+        onOpenSearch={() => {}}
+        isDashboard={true}
+      />
+
+      <div style={styles.leaderboardShell}>
+        <div style={styles.leaderboardHeader}>
+          <div>
+            <h2 style={styles.leaderboardTitle}>Company Job Management Dashboard 💼</h2>
+            <p style={{ color: "#9ca3af", margin: "6px 0 0", fontSize: "14px" }}>
+              Manage active software engineering roles, edit AI interview rubrics, and inspect applicant recordings for <strong>{user.companyName || user.name}</strong>.
+            </p>
+          </div>
+          <div style={{ display: "flex", gap: "12px" }}>
+            <button style={styles.postJobSmallBtn} onClick={() => setIsPostJobOpen(true)}>
+              + Post New Role
+            </button>
+            <button style={{ ...styles.postJobSmallBtn, backgroundColor: "rgba(255,255,255,0.1)", color: "#fff" }} onClick={() => navigate("/leaderboard")}>
+              View Overall Scoreboard 🏆
+            </button>
+          </div>
+        </div>
+
+        {loading ? (
+          <p style={{ textAlign: "center", color: "#9ca3af", padding: "60px" }}>
+            Loading job listings...
+          </p>
+        ) : error ? (
+          <div style={styles.errorCard}><p style={{ color: "#ef4444", margin: 0 }}>{error}</p></div>
+        ) : jobs.length === 0 ? (
+          <div style={styles.emptyLeaderboardBox}>
+            <h3 style={{ color: "#ffffff", margin: "0 0 10px" }}>No Roles Posted Yet</h3>
+            <p style={{ color: "#9ca3af", margin: "0 0 20px", fontSize: "14px" }}>
+              Create your first AI-screened technical job listing to start receiving candidates.
+            </p>
+            <button style={styles.authSubmitBtn} onClick={() => setIsPostJobOpen(true)}>
+              + Post First Role
+            </button>
+          </div>
+        ) : (
+          <div style={styles.jobCardsGrid}>
+            {jobs.map((job) => (
+              <div key={job.id} style={styles.jobCardItem}>
+                <div style={{ ...styles.jobCardTopGlow, background: job.status === "closed" ? "#6b7280" : "linear-gradient(135deg, #00f5a0, #00b4d8)" }} />
+                <div style={styles.jobCardHeader}>
+                  <div>
+                    <h3 style={styles.jobRoleName}>{job.role}</h3>
+                    <span style={styles.jobCompanyTag}>
+                      🏢 {job.companyName || user.companyName}
+                    </span>
+                  </div>
+                  <span
+                    style={{
+                      ...styles.jobLivePill,
+                      backgroundColor: job.status === "closed" ? "rgba(239,68,68,0.15)" : "rgba(0, 245, 160, 0.15)",
+                      color: job.status === "closed" ? "#ef4444" : "#00f5a0",
+                      borderColor: job.status === "closed" ? "rgba(239,68,68,0.3)" : "rgba(0, 245, 160, 0.3)",
+                    }}
+                  >
+                    {job.status === "closed" ? "Closed" : "Active AI Screening"}
+                  </span>
+                </div>
+
+                <div style={{ ...styles.jobReqsWrap, margin: "14px 0" }}>
+                  {(Array.isArray(job.requirements) ? job.requirements : [job.requirements]).map((req) => (
+                    <span key={req} style={styles.jobReqTag}>{req}</span>
+                  ))}
+                </div>
+
+                {job.extraInstructions && (
+                  <div style={styles.jobCustomPromptSnippet}>
+                    🤖 <b>Prompt Injected:</b> "{job.extraInstructions.slice(0, 85)}..."
+                  </div>
+                )}
+
+                <div style={{ display: "flex", gap: "10px", marginTop: "auto" }}>
+                  <button
+                    style={{ ...styles.jobApplyBtn, backgroundColor: "#00f5a0", color: "#000000" }}
+                    onClick={() => navigate(`/company/jobs/${job.id}/applicants`)}
+                  >
+                    View Applicants 👥
+                  </button>
+                  <button
+                    style={{ ...styles.jobApplyBtn, backgroundColor: "rgba(255,255,255,0.08)", color: "#ffffff", width: "auto" }}
+                    onClick={() => handleToggleJobStatus(job.id, job.status)}
+                  >
+                    {job.status === "closed" ? "Reopen" : "Close Role"}
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+
+      <PostJobModal
+        isOpen={isPostJobOpen}
+        onClose={() => setIsPostJobOpen(false)}
+        onJobCreated={(newJ) => setJobs((prev) => [newJ, ...prev])}
+        user={user}
+      />
+      <Footer />
+    </div>
+  );
+}
+
+// ==========================================
+// Company Job Applicants Evaluation Page (`/company/jobs/:jobId/applicants`)
+// ==========================================
+function JobApplicantsPage() {
+  const { jobId } = useParams();
+  const navigate = useNavigate();
+  const [user, setUser] = useState(getStoredUser());
+  const [applicants, setApplicants] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+  const [selectedCandidate, setSelectedCandidate] = useState(null);
+
+  useEffect(() => {
+    const handleStorage = () => setUser(getStoredUser());
+    window.addEventListener("storage", handleStorage);
+    return () => window.removeEventListener("storage", handleStorage);
+  }, []);
+
+  const userId = user?.id;
+  const userEmail = user?.email;
+  const isCompany = user?.isCompany;
+
+  useEffect(() => {
+    async function fetchApplicants() {
+      if (!isCompany || (!userId && !userEmail)) {
+        setError("Access Restricted: Only verified company recruiters can view job applicants.");
+        setLoading(false);
+        return;
+      }
+      try {
+        setLoading(true);
+        const res = await fetch(`${API_URL}/api/company/jobs/${encodeURIComponent(jobId)}/applicants?companyId=${encodeURIComponent(userId || "")}&userEmail=${encodeURIComponent(userEmail || "")}`);
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || "Could not fetch applicants.");
+        setApplicants(data.applicants || []);
+      } catch (err) {
+        setError(err.message);
+      } finally {
+        setLoading(false);
+      }
+    }
+    fetchApplicants();
+  }, [jobId, userId, userEmail, isCompany]);
+
+  if (!user?.isCompany) {
+    return (
+      <div style={styles.authContainer}>
+        <div style={styles.authCardBox}>
+          <span style={{ fontSize: "40px" }}>🔒</span>
+          <h2 style={{ color: "#ffffff", margin: "16px 0 8px" }}>Company Recruiter Portal Restricted</h2>
+          <p style={{ color: "#9ca3af", fontSize: "14px", margin: "0 0 24px" }}>
+            Viewing candidate applicants requires a verified company account.
+          </p>
+          <button style={styles.authSubmitBtn} onClick={() => navigate("/")}>
+            Return to Platform
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div style={styles.pageContainer}>
+      <Navbar
+        user={user}
+        onLogout={() => {
+          localStorage.removeItem("user");
+          navigate("/");
+        }}
+        onOpenContact={() => {}}
+        onOpenSearch={() => {}}
+        isDashboard={true}
+      />
+
+      <div style={styles.leaderboardShell}>
+        <div style={styles.leaderboardHeader}>
+          <div>
+            <div style={{ display: "flex", alignItems: "center", gap: "10px", marginBottom: "6px" }}>
+              <button
+                onClick={() => navigate("/company/jobs")}
+                style={{ background: "none", border: "none", color: "#00f5a0", fontSize: "14px", fontWeight: "700", cursor: "pointer", padding: 0 }}
+              >
+                ← Back to Company Jobs
+              </button>
+            </div>
+            <h2 style={styles.leaderboardTitle}>Applicants & Evaluation Metrics 👥</h2>
+            <p style={{ color: "#9ca3af", margin: "6px 0 0", fontSize: "14px" }}>
+              Inspecting AI voice screening recordings and transcripts for Position ID: <strong style={{ color: "#ffffff" }}>{jobId}</strong>
+            </p>
+          </div>
+        </div>
+
+        {loading ? (
+          <p style={{ textAlign: "center", color: "#9ca3af", padding: "60px" }}>
+            Loading candidate application data...
+          </p>
+        ) : error ? (
+          <div style={styles.errorCard}><p style={{ color: "#ef4444", margin: 0 }}>{error}</p></div>
+        ) : applicants.length === 0 ? (
+          <div style={styles.emptyLeaderboardBox}>
+            <h3 style={{ color: "#ffffff", margin: "0 0 10px" }}>No Applicants for this Position Yet</h3>
+            <p style={{ color: "#9ca3af", margin: 0, fontSize: "14px" }}>
+              Candidates who complete an interview for this job will appear here with video replay and AI scores.
+            </p>
+          </div>
+        ) : (
+          <div style={{ display: "grid", gap: "16px" }}>
+            {applicants.map((item, index) => (
+              <div key={item.sessionId || index} style={styles.candidateCard}>
+                <div style={styles.candidateCardRow}>
+                  <div style={{ display: "flex", alignItems: "center", gap: "16px" }}>
+                    <div style={styles.rankPill}>#{index + 1}</div>
+                    <div>
+                      <h3 style={styles.candidateNameText}>{item.candidateName}</h3>
+                      <span style={{ fontSize: "13px", color: "#9ca3af" }}>
+                        Session ID: <code style={{ color: "#00f5a0" }}>{item.sessionId?.slice(0, 16)}...</code>
+                      </span>
+                    </div>
+                  </div>
+
+                  <div style={{ display: "flex", alignItems: "center", gap: "20px" }}>
+                    <div style={{ textAlign: "right" }}>
+                      <span style={styles.candidateScoreNum}>{item.score}</span>
+                      <span style={{ fontSize: "12px", color: "#9ca3af" }}> / 100</span>
+                    </div>
+                    <button
+                      style={styles.detailsToggleBtn}
+                      onClick={() =>
+                        setSelectedCandidate(selectedCandidate?.sessionId === item.sessionId ? null : item)
+                      }
+                    >
+                      {selectedCandidate?.sessionId === item.sessionId ? "Hide Analysis" : "Inspect Video & Transcript"}
+                    </button>
+                  </div>
+                </div>
+
+                {selectedCandidate?.sessionId === item.sessionId && (
+                  <div style={styles.candidateExpandedDetails}>
+                    <div>
+                      <div style={{ display: "flex", flexWrap: "wrap", gap: "16px", marginBottom: "12px", fontSize: "12px", color: "#9ca3af", backgroundColor: "rgba(255,255,255,0.03)", padding: "8px 12px", borderRadius: "8px" }}>
+                        <span>⏱️ <b>Start:</b> {item.startedAt ? new Date(item.startedAt).toLocaleString() : (item.completedAt ? new Date(item.completedAt).toLocaleString() : "N/A")}</span>
+                        <span>⌛ <b>End:</b> {item.endedAt ? new Date(item.endedAt).toLocaleString() : "N/A"}</span>
+                        {item.resumeUrl && (
+                          <a
+                            href={item.resumeUrl.startsWith("http") ? item.resumeUrl : `${API_URL}${item.resumeUrl}`}
+                            target="_blank"
+                            rel="noreferrer"
+                            style={{ color: "#00f5a0", fontWeight: "700", textDecoration: "none" }}
+                          >
+                            📄 View Resume PDF
+                          </a>
+                        )}
+                      </div>
+
+                      <h4 style={styles.detailsSectionHeading}>AI Feedback & Evaluation</h4>
+                      <p style={styles.detailsSummaryPara}>{item.summary || "Automated evaluation completed."}</p>
+
+                      <h4 style={{ ...styles.detailsSectionHeading, marginTop: "16px" }}>Candidate Transcript</h4>
+                      <div style={styles.transcriptBox}>
+                        {item.transcript || "No transcript recorded."}
+                      </div>
+                    </div>
+
+                    <div style={{ textAlign: "center" }}>
+                      <h4 style={styles.detailsSectionHeading}>Interview Video Archival (3-Day B2 Storage)</h4>
+                      {item.videoUrl ? (
+                        <>
+                          <video
+                            src={item.videoUrl.startsWith("http") ? item.videoUrl : `${API_URL}${item.videoUrl}`}
+                            controls
+                            style={styles.recordingPlayer}
+                          />
+                          <a
+                            href={item.videoUrl.startsWith("http") ? item.videoUrl : `${API_URL}${item.videoUrl}`}
+                            download={`interview_${item.sessionId}.webm`}
+                            target="_blank"
+                            rel="noreferrer"
+                            style={{
+                              display: "inline-block",
+                              marginTop: "8px",
+                              backgroundColor: "rgba(0, 245, 160, 0.15)",
+                              border: "1px solid rgba(0, 245, 160, 0.3)",
+                              color: "#00f5a0",
+                              padding: "6px 12px",
+                              borderRadius: "6px",
+                              fontSize: "12px",
+                              fontWeight: "700",
+                              textDecoration: "none"
+                            }}
+                          >
+                            ⬇️ Download Video
+                          </a>
+                        </>
+                      ) : (
+                        <div style={styles.noVideoBox}>No Video Recording Saved</div>
+                      )}
+                    </div>
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+
+      <Footer />
+    </div>
+  );
+}
+
+// ==========================================
 // Hiring Company Leaderboard Page
 // ==========================================
 function LeaderboardPage() {
   const navigate = useNavigate();
-  const user = getStoredUser();
+  const [user, setUser] = useState(getStoredUser());
   const [leaderboard, setLeaderboard] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [selectedCandidate, setSelectedCandidate] = useState(null);
 
   useEffect(() => {
+    const handleStorage = () => setUser(getStoredUser());
+    window.addEventListener("storage", handleStorage);
+    return () => window.removeEventListener("storage", handleStorage);
+  }, []);
+
+  const userEmail = user?.email;
+  const isCompany = user?.isCompany;
+
+  useEffect(() => {
     async function fetchLeaderboard() {
-      if (!user?.isCompany) {
+      if (!isCompany || !userEmail) {
         setError("Access Restricted: Only verified company accounts can view candidate evaluation records.");
         setLoading(false);
         return;
       }
       try {
         setLoading(true);
-        const res = await fetch(`${API_URL}/api/leaderboard?userEmail=${encodeURIComponent(user.email)}`);
+        const res = await fetch(`${API_URL}/api/leaderboard?userEmail=${encodeURIComponent(userEmail)}`);
         const data = await res.json();
         if (!res.ok) throw new Error(data.error || "Could not fetch leaderboard.");
         setLeaderboard(data?.leaderboard || []);
@@ -2186,7 +2778,7 @@ function LeaderboardPage() {
       }
     }
     fetchLeaderboard();
-  }, [user]);
+  }, [userEmail, isCompany]);
 
   if (!user?.isCompany) {
     return (
@@ -2277,6 +2869,21 @@ function LeaderboardPage() {
                 {selectedCandidate?.sessionId === item.sessionId && (
                   <div style={styles.candidateExpandedDetails}>
                     <div>
+                      <div style={{ display: "flex", flexWrap: "wrap", gap: "16px", marginBottom: "12px", fontSize: "12px", color: "#9ca3af", backgroundColor: "rgba(255,255,255,0.03)", padding: "8px 12px", borderRadius: "8px" }}>
+                        <span>⏱️ <b>Start:</b> {item.startedAt ? new Date(item.startedAt).toLocaleString() : (item.completedAt ? new Date(item.completedAt).toLocaleString() : "N/A")}</span>
+                        <span>⌛ <b>End:</b> {item.endedAt ? new Date(item.endedAt).toLocaleString() : "N/A"}</span>
+                        {item.resumeUrl && (
+                          <a
+                            href={item.resumeUrl.startsWith("http") ? item.resumeUrl : `${API_URL}${item.resumeUrl}`}
+                            target="_blank"
+                            rel="noreferrer"
+                            style={{ color: "#00f5a0", fontWeight: "700", textDecoration: "none" }}
+                          >
+                            📄 View Resume PDF
+                          </a>
+                        )}
+                      </div>
+
                       <h4 style={styles.detailsSectionHeading}>AI Evaluation Notes</h4>
                       <p style={styles.detailsSummaryPara}>{item.summary || "Automated evaluation completed."}</p>
 
@@ -2289,11 +2896,33 @@ function LeaderboardPage() {
                     <div style={{ textAlign: "center" }}>
                       <h4 style={styles.detailsSectionHeading}>Interview Video Archival</h4>
                       {item.videoUrl ? (
-                        <video
-                          src={`${API_URL}${item.videoUrl}`}
-                          controls
-                          style={styles.recordingPlayer}
-                        />
+                        <>
+                          <video
+                            src={item.videoUrl.startsWith("http") ? item.videoUrl : `${API_URL}${item.videoUrl}`}
+                            controls
+                            style={styles.recordingPlayer}
+                          />
+                          <a
+                            href={item.videoUrl.startsWith("http") ? item.videoUrl : `${API_URL}${item.videoUrl}`}
+                            download={`interview_${item.sessionId}.webm`}
+                            target="_blank"
+                            rel="noreferrer"
+                            style={{
+                              display: "inline-block",
+                              marginTop: "8px",
+                              backgroundColor: "rgba(0, 245, 160, 0.15)",
+                              border: "1px solid rgba(0, 245, 160, 0.3)",
+                              color: "#00f5a0",
+                              padding: "6px 12px",
+                              borderRadius: "6px",
+                              fontSize: "12px",
+                              fontWeight: "700",
+                              textDecoration: "none"
+                            }}
+                          >
+                            ⬇️ Download Video
+                          </a>
+                        </>
                       ) : (
                         <div style={styles.noVideoBox}>No Video Recording Saved</div>
                       )}
@@ -2315,14 +2944,18 @@ export default function App() {
   return (
     <BrowserRouter>
       <Routes>
-        <Route path="/" element={<HomePage />} />
+        <Route path="/" element={<LandingPage />} />
+        <Route path="/home" element={<HomePage />} />
         <Route path="/login" element={<LoginPage />} />
         <Route path="/signup" element={<SignupPage />} />
         <Route path="/post-job" element={<CompanyJobPage />} />
+        <Route path="/company/jobs" element={<CompanyJobsPage />} />
+        <Route path="/company/jobs/:jobId/applicants" element={<JobApplicantsPage />} />
         <Route path="/leaderboard" element={<LeaderboardPage />} />
         <Route path="/apply/:jobId" element={<UploadPage />} />
         <Route path="/interview/:sessionId" element={<InterviewPage />} />
         <Route path="/evaluation/:sessionId" element={<EvaluationPage />} />
+        <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </BrowserRouter>
   );

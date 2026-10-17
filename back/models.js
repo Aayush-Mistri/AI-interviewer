@@ -19,6 +19,7 @@ const jobSchema = new mongoose.Schema({
   extraInstructions: { type: String, default: "" },
   companyId: { type: String, default: null },
   postedBy: { type: String, default: "Company" },
+  status: { type: String, enum: ["active", "closed"], default: "active" },
   createdAt: { type: Date, default: Date.now }
 });
 
@@ -37,6 +38,10 @@ const evaluationSchema = new mongoose.Schema({
   improvementAdvice: { type: String, default: "" },
   transcript: { type: String, default: "" },
   videoUrl: { type: String, default: null },
+  b2ObjectKey: { type: String, default: null },
+  resumeUrl: { type: String, default: null },
+  startedAt: { type: Date, default: null },
+  endedAt: { type: Date, default: null },
   completedAt: { type: Date, default: Date.now }
 });
 

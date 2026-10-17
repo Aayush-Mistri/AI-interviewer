@@ -1,8 +1,13 @@
 import {extractPdfText , normalizeText , extractCandidateName , summarizeResume , extractResumeKeywords} from "../utils/pdfScrap.js"
 import { randomUUID } from "crypto";
+import path from "path";
+import fs from "fs";
 import {resumeSessions, customJobs} from "../state.js"
 import { Job } from "../models.js";
-import { config } from "../config.js";
+import { config, __dirname } from "../config.js";
+
+const resumesDir = path.join(__dirname, "public", "resumes");
+if (!fs.existsSync(resumesDir)) fs.mkdirSync(resumesDir, { recursive: true });
 
 export const resumeScraper = async(req , res) => {
     try {
@@ -29,6 +34,17 @@ export const resumeScraper = async(req , res) => {
         const resumeSummary = summarizeResume(resumeText);
         const sessionId = randomUUID();
 
+        // Save candidate resume PDF file locally to public/resumes
+        let resumeUrl = null;
+        try {
+          const resumeFileName = `${sessionId}.pdf`;
+          const filePath = path.join(resumesDir, resumeFileName);
+          await fs.promises.writeFile(filePath, req.file.buffer);
+          resumeUrl = `/resumes/${resumeFileName}`;
+        } catch (fileErr) {
+          console.warn("Could not save candidate resume file locally:", fileErr.message);
+        }
+
         // Check if there are associated custom job details from DB or memory
         let jobDetails = null;
         if (jobId) {
@@ -50,6 +66,7 @@ export const resumeScraper = async(req , res) => {
           extraInstructions: jobDetails?.extraInstructions || extraInstructions || "",
           resumeText: resumeText.slice(0, config.maxResumeTextChars),
           resumeSummary,
+          resumeUrl,
           createdAt: Date.now()
         });
     
