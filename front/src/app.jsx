@@ -10,6 +10,7 @@ import DriftWall from './DriftWall';
 import PaperCrumple from './PaperCrumple';
 import PixelCard from './PixelCard';
 import SpecularButton from './SpecularButton';
+import TiltedCard, { TiltedCardLayer } from './TiltedCard';
 
 import logo from './lotus.svg';
 import resume1 from './resumeImgs/ATS-friendly-Minimalist-Resume-Example-1778884686202.png';
@@ -286,7 +287,6 @@ function LandingPage() {
   const [user, setUser] = useState(getStoredUser());
   const [allJobs, setAllJobs] = useState(DEFAULT_JOBS);
 
-  const headerRef = useRef(null);
   const interviewRef = useRef(null);
   const talentRef = useRef(null);
   const crumpleRef = useRef(null);
@@ -324,20 +324,6 @@ function LandingPage() {
       }
     }
     fetchJobs();
-  }, []);
-
-  useEffect(() => {
-    const mark = document.querySelector('.site-mark');
-    const header = headerRef.current;
-    if (!mark || !header) return undefined;
-    const observer = new IntersectionObserver(
-      entries => {
-        mark.classList.toggle('site-mark--hidden', entries[0].isIntersecting);
-      },
-      { rootMargin: '-4px 0px 0px 0px' }
-    );
-    observer.observe(header);
-    return () => observer.disconnect();
   }, []);
 
   useEffect(() => {
@@ -424,56 +410,64 @@ function LandingPage() {
         VaadIn
       </span>
 
-      <header ref={headerRef} className="site-header">
+      <header className="site-header">
         <div className="site-header__inner" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%' }}>
-          <a href="#top" style={{ display: 'flex', alignItems: 'center', gap: '10px', textDecoration: 'none', color: '#f8fafc', fontSize: '1.2rem', fontWeight: 600, zIndex: 30 }}>
-            <img src={logo} alt="VaadIn" style={{ width: '28px', height: '28px' }} draggable={false} />
-            <span>VaadIn</span>
-          </a>
+          <div style={{ flex: 1 }} aria-hidden="true" />
 
-          <div style={{ flex: 1, display: 'flex', justifyContent: 'center' }}>
-            <PillNav
-              items={navItems}
-              itemStyle="pill"
-              hoverEffect="fill"
-              indicator="dot"
-              theme="dark"
-              collapseBelow={640}
-              ariaLabel="Main"
-            />
-          </div>
+          <PillNav
+            logo={logo}
+            logoAlt="VaadIn"
+            logoHref="#top"
+            items={navItems}
+            itemStyle="pill"
+            hoverEffect="fill"
+            indicator="dot"
+            theme="dark"
+            collapseBelow={900}
+            ariaLabel="Main"
+          />
 
-          <div style={{ display: 'flex', gap: '12px', zIndex: 30, alignItems: 'center' }}>
-            <button
+          <div style={{ flex: 1, display: 'flex', justifyContent: 'flex-end', gap: '12px', zIndex: 30, alignItems: 'center' }}>
+            <SpecularButton
+              size="sm"
+              radius={999}
+              tint="#000000"
+              tintOpacity={0.32}
+              textColor="#e4e7ec"
+              lineColor="#ffffff"
+              baseColor="#1c1c20"
+              intensity={0.9}
+              idleIntensity={0.22}
+              shineSize={9}
+              shineFade={30}
+              thickness={1.1}
+              glow={0.7}
+              followMouse
+              proximity={140}
               onClick={() => navigate('/login')}
-              style={{
-                backgroundColor: 'rgba(255, 255, 255, 0.08)',
-                color: '#f8fafc',
-                border: '1px solid rgba(255, 255, 255, 0.16)',
-                padding: '8px 18px',
-                borderRadius: '999px',
-                fontSize: '0.88rem',
-                fontWeight: 500,
-                cursor: 'pointer'
-              }}
             >
               Log In
-            </button>
-            <button
+            </SpecularButton>
+            <SpecularButton
+              size="sm"
+              radius={999}
+              tint="#000000"
+              tintOpacity={0.38}
+              textColor="#f5f5f5"
+              lineColor="#ffffff"
+              baseColor="#525252"
+              intensity={1}
+              idleIntensity={0.35}
+              shineSize={10}
+              shineFade={34}
+              thickness={1.2}
+              glow={1}
+              followMouse
+              proximity={160}
               onClick={() => navigate('/signup')}
-              style={{
-                backgroundColor: '#f8fafc',
-                color: '#08080a',
-                border: 'none',
-                padding: '8px 18px',
-                borderRadius: '999px',
-                fontSize: '0.88rem',
-                fontWeight: 600,
-                cursor: 'pointer'
-              }}
             >
               Sign Up
-            </button>
+            </SpecularButton>
           </div>
         </div>
       </header>
@@ -791,41 +785,29 @@ function HomePage() {
   if (!user) return null;
 
   return (
-    <div className="site" id="top">
+    <div className="site" id="top" style={{ backgroundColor: '#000000', minHeight: '100vh' }}>
       <header className="site-header">
-        <div className="site-header__inner" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-          <Link to="/home" className="site-footer__brand" style={{ textDecoration: 'none' }}>
+        <div className="site-header__inner dash-bar">
+          <Link to="/home" className="site-footer__brand">
             <img className="site-footer__logo" src={logo} alt="" draggable={false} />
             <span>VaadIn</span>
           </Link>
 
-          <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
-            <span style={{ fontSize: '0.88rem', fontWeight: 600, color: '#f8fafc', background: 'rgba(255, 255, 255, 0.08)', padding: '6px 14px', borderRadius: '999px', border: '1px solid rgba(255, 255, 255, 0.12)' }}>
-              {user.isCompany ? `🏢 ${user.companyName || user.name}` : `👤 ${user.name}`}
+          <div className="dash-bar__side">
+            <span className="dash-user">
+              {user.isCompany ? (user.companyName || user.name) : user.name}
             </span>
             {user.isCompany && (
               <>
-                <Link to="/company/jobs" style={{ color: '#8099cc', textDecoration: 'none', fontSize: '0.88rem', fontWeight: 600 }}>
-                  Jobs 💼
+                <Link to="/company/jobs" className="dash-link">
+                  Jobs
                 </Link>
-                <Link to="/leaderboard" style={{ color: '#8099cc', textDecoration: 'none', fontSize: '0.88rem', fontWeight: 600 }}>
-                  Leaderboard 🏆
+                <Link to="/leaderboard" className="dash-link">
+                  Leaderboard
                 </Link>
               </>
             )}
-            <button
-              onClick={handleLogout}
-              style={{
-                backgroundColor: 'rgba(255, 255, 255, 0.08)',
-                color: '#f8fafc',
-                border: '1px solid rgba(255, 255, 255, 0.16)',
-                padding: '8px 18px',
-                borderRadius: '999px',
-                fontSize: '0.88rem',
-                fontWeight: 500,
-                cursor: 'pointer'
-              }}
-            >
+            <button onClick={handleLogout} className="dash-ghost">
               Log Out
             </button>
           </div>
@@ -833,145 +815,121 @@ function HomePage() {
       </header>
 
       <main className="stage" style={{ minHeight: '80vh', paddingTop: '40px' }}>
-        {/* User Command Center */}
-        <div
-          style={{
-            width: '100%',
-            maxWidth: '1200px',
-            backgroundColor: '#0a0a0d',
-            border: '1px solid rgba(255, 255, 255, 0.12)',
-            borderRadius: '24px',
-            padding: '28px 32px',
-            marginBottom: '40px'
-          }}
-        >
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '18px' }}>
+        <div className="dash">
+          <section className="dash-hero">
             <div>
-              <h2 style={{ fontFamily: "'Instrument Serif', Georgia, serif", fontSize: '2rem', fontWeight: 400, color: '#f8fafc', margin: 0 }}>
+              <p className="dash-hero__eyebrow">
+                {user.isCompany ? 'Recruiter Workspace' : 'Candidate Workspace'}
+              </p>
+              <h2 className="dash-hero__title">
                 Welcome, {user.isCompany ? (user.companyName || user.name) : user.name}
               </h2>
-              <p style={{ color: '#cbd5e1', fontSize: '0.9rem', marginTop: '6px', fontWeight: 300 }}>
+              <p className="dash-hero__sub">
                 {user.isCompany
                   ? "Manage active positions, set custom prompt rubrics, and view candidate scores."
                   : "Select a position below to upload your resume and begin your technical voice screening."}
               </p>
             </div>
 
-            <div style={{ display: 'flex', gap: '12px' }}>
-              {user.isCompany ? (
-                <>
-                  <button
-                    onClick={() => navigate('/post-job')}
-                    style={{
-                      backgroundColor: '#f8fafc',
-                      color: '#08080a',
-                      border: 'none',
-                      padding: '10px 20px',
-                      borderRadius: '12px',
-                      fontSize: '0.88rem',
-                      fontWeight: 600,
-                      cursor: 'pointer'
-                    }}
-                  >
-                    + Post New Role
-                  </button>
-                  <button
-                    onClick={() => navigate('/leaderboard')}
-                    style={{
-                      backgroundColor: 'rgba(255, 255, 255, 0.08)',
-                      color: '#f8fafc',
-                      border: '1px solid rgba(255, 255, 255, 0.16)',
-                      padding: '10px 20px',
-                      borderRadius: '12px',
-                      fontSize: '0.88rem',
-                      fontWeight: 500,
-                      cursor: 'pointer'
-                    }}
-                  >
-                    Leaderboard 🏆
-                  </button>
-                </>
-              ) : null}
-            </div>
-          </div>
-        </div>
-
-        {/* Roles List */}
-        <section style={{ width: '100%', maxWidth: '1200px' }}>
-          <div style={{ textAlign: 'left', marginBottom: '28px' }}>
-            <h3 style={{ fontFamily: "'Instrument Serif', Georgia, serif", fontSize: '2.2rem', fontWeight: 400, color: '#f8fafc', margin: 0 }}>
-              Available Positions
-            </h3>
-          </div>
-
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(340px, 1fr))', gap: '20px' }}>
-            {allJobs.map((job) => (
-              <div
-                key={job.id}
-                style={{
-                  backgroundColor: '#0a0a0d',
-                  border: '1px solid rgba(255, 255, 255, 0.08)',
-                  borderRadius: '20px',
-                  padding: '24px',
-                  display: 'flex',
-                  flexDirection: 'column',
-                  position: 'relative',
-                  overflow: 'hidden'
-                }}
-              >
-                <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: '3px', background: job.gradient || 'linear-gradient(135deg, #8099cc, #495a7d)' }} />
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-                  <div>
-                    <h3 style={{ fontFamily: "'Instrument Serif', Georgia, serif", fontSize: '1.6rem', fontWeight: 400, color: '#f8fafc', margin: 0 }}>
-                      {job.role}
-                    </h3>
-                    <span style={{ fontSize: '0.8rem', color: '#8099cc', fontWeight: 500, marginTop: '4px', display: 'block' }}>
-                      🏢 {job.companyName || job.companyDetails?.name || "VaadIn Partner"}
-                    </span>
-                  </div>
-                  <span style={{ backgroundColor: 'rgba(128, 153, 204, 0.15)', color: '#8099cc', fontSize: '0.72rem', fontWeight: 600, padding: '4px 10px', borderRadius: '999px', border: '1px solid rgba(128, 153, 204, 0.3)' }}>
-                    AI Ready
-                  </span>
-                </div>
-
-                <p style={{ color: '#cbd5e1', fontSize: '0.88rem', lineHeight: '1.6', margin: '14px 0 16px', fontWeight: 300 }}>
-                  {job.description}
-                </p>
-
-                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px', marginBottom: '16px' }}>
-                  {(Array.isArray(job.requirements) ? job.requirements : [job.requirements]).map((req) => (
-                    <span key={req} style={{ backgroundColor: 'rgba(255, 255, 255, 0.05)', border: '1px solid rgba(255, 255, 255, 0.1)', padding: '3px 10px', borderRadius: '999px', fontSize: '0.75rem', color: '#cbd5e1' }}>
-                      {req}
-                    </span>
-                  ))}
-                </div>
-
-                {job.extraInstructions && (
-                  <div style={{ backgroundColor: 'rgba(128, 153, 204, 0.08)', border: '1px solid rgba(128, 153, 204, 0.2)', padding: '10px 14px', borderRadius: '10px', fontSize: '0.8rem', color: '#8099cc', marginBottom: '18px' }}>
-                    🤖 <b>AI Instructions:</b> "{job.extraInstructions.slice(0, 90)}..."
-                  </div>
-                )}
-
-                <button
-                  onClick={() => navigate(`/apply/${job.id}`)}
-                  style={{
-                    marginTop: 'auto',
-                    backgroundColor: '#f8fafc',
-                    color: '#08080a',
-                    border: 'none',
-                    padding: '12px',
-                    borderRadius: '12px',
-                    fontSize: '0.88rem',
-                    fontWeight: 600,
-                    cursor: 'pointer'
-                  }}
+            {user.isCompany && (
+              <div className="dash-hero__actions">
+                <SpecularButton
+                  size="sm"
+                  radius={999}
+                  tint="#000000"
+                  tintOpacity={0.38}
+                  textColor="#f5f5f5"
+                  lineColor="#ffffff"
+                  baseColor="#525252"
+                  intensity={1}
+                  idleIntensity={0.35}
+                  shineSize={10}
+                  shineFade={34}
+                  thickness={1.2}
+                  glow={1}
+                  followMouse
+                  proximity={160}
+                  onClick={() => navigate('/post-job')}
                 >
-                  Apply & Take Voice Screening →
+                  Post New Role
+                </SpecularButton>
+                <button onClick={() => navigate('/leaderboard')} className="dash-secondary">
+                  Leaderboard
                 </button>
               </div>
-            ))}
-          </div>
-        </section>
+            )}
+          </section>
+
+          <section className="dash-roles">
+            <div className="dash-roles__head">
+              <h3 className="dash-roles__title">Available Positions</h3>
+              <span className="dash-roles__count">{allJobs.length} open roles</span>
+            </div>
+
+            <div className="dash-grid">
+              {allJobs.map((job) => (
+                <TiltedCard
+                  key={job.id}
+                  containerHeight="480px"
+                  containerWidth="100%"
+                  imageHeight="480px"
+                  imageWidth="100%"
+                  rotateAmplitude={12}
+                  scaleOnHover={1.03}
+                  glare={0.4}
+                  shadow={0.5}
+                  radius={20}
+                  showTooltip={false}
+                  className="job-tilted-card"
+                >
+                  <div className="job-card">
+                    <div className="job-card__bar" style={{ background: job.gradient || 'linear-gradient(135deg, #8099cc, #495a7d)' }} />
+                    <TiltedCardLayer depth={25} style={{ position: 'relative' }}>
+                      <div className="job-card__head">
+                        <div>
+                          <h4 className="job-card__role">{job.role}</h4>
+                          <span className="job-card__company">
+                            {job.companyName || job.companyDetails?.name || "VaadIn Partner"}
+                          </span>
+                        </div>
+                        <span className="job-card__badge">AI Ready</span>
+                      </div>
+                    </TiltedCardLayer>
+
+                    <TiltedCardLayer depth={12} style={{ position: 'relative' }}>
+                      <p className="job-card__desc">{job.description}</p>
+                    </TiltedCardLayer>
+
+                    <TiltedCardLayer depth={18} style={{ position: 'relative' }}>
+                      <div className="job-card__tags">
+                        {(Array.isArray(job.requirements) ? job.requirements : [job.requirements]).map((req) => (
+                          <span key={req} className="job-card__tag">
+                            {req}
+                          </span>
+                        ))}
+                      </div>
+                    </TiltedCardLayer>
+
+                    {job.extraInstructions && (
+                      <TiltedCardLayer depth={20} style={{ position: 'relative' }}>
+                        <div className="job-card__ai">
+                          <span className="job-card__ai-label">AI Interviewer Focus</span>
+                          <p className="job-card__ai-text">"{job.extraInstructions.slice(0, 90)}..."</p>
+                        </div>
+                      </TiltedCardLayer>
+                    )}
+
+                    <TiltedCardLayer depth={30} style={{ position: 'relative', marginTop: 'auto', width: '100%' }}>
+                      <button onClick={() => navigate(`/apply/${job.id}`)} className="job-card__apply">
+                        Apply & Take Voice Screening <span aria-hidden="true">→</span>
+                      </button>
+                    </TiltedCardLayer>
+                  </div>
+                </TiltedCard>
+              ))}
+            </div>
+          </section>
+        </div>
       </main>
 
       <footer className="site-footer">
@@ -1026,63 +984,103 @@ function LoginPage() {
   }
 
   return (
-    <div className="site" style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '40px 20px' }}>
-      <div style={{ width: '100%', maxWidth: '440px', backgroundColor: '#0a0a0d', border: '1px solid rgba(255, 255, 255, 0.12)', borderRadius: '24px', padding: '36px' }}>
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '24px' }}>
-          <Link to="/" style={{ textDecoration: 'none', color: '#f8fafc', fontFamily: "'Instrument Serif', Georgia, serif", fontSize: '1.6rem' }}>
-            VaadIn
-          </Link>
-          <button onClick={() => navigate('/')} style={{ background: 'none', border: 'none', color: '#8099cc', cursor: 'pointer', fontSize: '0.85rem' }}>
-            ← Home
-          </button>
+    <div className="site">
+      <div className="auth">
+        <Iridescence
+          className="auth__backdrop"
+          color="#8099cc"
+          hueShift={0}
+          saturation={1}
+          brightness={1.5}
+          contrast={1}
+          speed={1}
+          scale={1}
+          detail={8}
+          warp={1}
+          rotation={0}
+          mouseReact={true}
+          amplitude={0.1}
+          stir={0.5}
+          sheen={0.3}
+          clickSwirl={true}
+          grain={0}
+          fade={0}
+        />
+        <div className="auth__veil" aria-hidden="true" />
+
+        <div className="auth__card">
+          <div className="auth__head">
+            <Link to="/" className="auth__brand">
+              <img src={logo} alt="" draggable={false} />
+              VaadIn
+            </Link>
+            <button type="button" onClick={() => navigate('/')} className="auth__back">
+              ← Home
+            </button>
+          </div>
+
+          <h2 className="auth__title">Log In</h2>
+          <p className="auth__sub">Access your candidate dashboard or recruiter portal.</p>
+
+          <form onSubmit={handleLogin} className="auth__form" autoComplete="on">
+            <div className="auth__field">
+              <label className="auth__label" htmlFor="login-email">Email</label>
+              <input
+                id="login-email"
+                type="email"
+                className="auth__input"
+                placeholder="name@example.com"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                required
+                autoComplete="email"
+              />
+            </div>
+
+            <div className="auth__field">
+              <label className="auth__label" htmlFor="login-password">Password</label>
+              <input
+                id="login-password"
+                type="password"
+                className="auth__input"
+                placeholder="••••••••"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                required
+                autoComplete="current-password"
+              />
+            </div>
+
+            {error && <p className="auth__error">{error}</p>}
+
+            <SpecularButton
+              type="submit"
+              size="md"
+              radius={12}
+              className="auth__submit"
+              tint="#000000"
+              tintOpacity={0.38}
+              textColor="#f5f5f5"
+              lineColor="#ffffff"
+              baseColor="#525252"
+              intensity={1}
+              idleIntensity={0.35}
+              shineSize={10}
+              shineFade={34}
+              thickness={1.2}
+              glow={1}
+              followMouse
+              proximity={200}
+              disabled={loading}
+            >
+              {loading ? "Authenticating..." : "Log In"}
+            </SpecularButton>
+          </form>
+
+          <p className="auth__footer">
+            Don't have an account? <Link to="/signup">Sign up</Link>
+          </p>
         </div>
-
-        <h2 style={{ fontFamily: "'Instrument Serif', Georgia, serif", fontSize: '2rem', fontWeight: 400, color: '#f8fafc', margin: '0 0 6px' }}>
-          Log In
-        </h2>
-        <p style={{ color: '#cbd5e1', fontSize: '0.88rem', margin: '0 0 24px', fontWeight: 300 }}>
-          Access your candidate dashboard or recruiter portal.
-        </p>
-
-        <form onSubmit={handleLogin} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-          <div>
-            <label style={{ display: 'block', fontSize: '0.8rem', color: '#cbd5e1', marginBottom: '6px' }}>Email</label>
-            <input
-              type="email"
-              placeholder="name@example.com"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              required
-              style={{ width: '100%', backgroundColor: '#121217', border: '1px solid rgba(255, 255, 255, 0.15)', borderRadius: '10px', padding: '12px 14px', color: '#f8fafc', outline: 'none' }}
-            />
-          </div>
-
-          <div>
-            <label style={{ display: 'block', fontSize: '0.8rem', color: '#cbd5e1', marginBottom: '6px' }}>Password</label>
-            <input
-              type="password"
-              placeholder="••••••••"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              required
-              style={{ width: '100%', backgroundColor: '#121217', border: '1px solid rgba(255, 255, 255, 0.15)', borderRadius: '10px', padding: '12px 14px', color: '#f8fafc', outline: 'none' }}
-            />
-          </div>
-
-          {error && <p style={{ color: '#ef4444', fontSize: '0.82rem', margin: 0 }}>{error}</p>}
-
-          <button
-            type="submit"
-            disabled={loading}
-            style={{ width: '100%', backgroundColor: '#f8fafc', color: '#08080a', border: 'none', padding: '12px', borderRadius: '10px', fontSize: '0.88rem', fontWeight: 600, cursor: 'pointer', marginTop: '8px' }}
-          >
-            {loading ? "Authenticating..." : "Log In"}
-          </button>
-        </form>
-
-        <p style={{ marginTop: '20px', fontSize: '0.85rem', color: '#cbd5e1', textAlign: 'center' }}>
-          Don't have an account? <Link to="/signup" style={{ color: '#8099cc', textDecoration: 'none' }}>Sign up</Link>
-        </p>
       </div>
     </div>
   );
@@ -1141,113 +1139,157 @@ function SignupPage() {
   }
 
   return (
-    <div className="site" style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '40px 20px' }}>
-      <div style={{ width: '100%', maxWidth: '480px', backgroundColor: '#0a0a0d', border: '1px solid rgba(255, 255, 255, 0.12)', borderRadius: '24px', padding: '36px' }}>
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '24px' }}>
-          <Link to="/" style={{ textDecoration: 'none', color: '#f8fafc', fontFamily: "'Instrument Serif', Georgia, serif", fontSize: '1.6rem' }}>
-            VaadIn
-          </Link>
-          <button onClick={() => navigate('/')} style={{ background: 'none', border: 'none', color: '#8099cc', cursor: 'pointer', fontSize: '0.85rem' }}>
-            ← Home
-          </button>
-        </div>
+    <div className="site">
+      <div className="auth">
+        <Iridescence
+          className="auth__backdrop"
+          color="#8099cc"
+          hueShift={0}
+          saturation={1}
+          brightness={1.5}
+          contrast={1}
+          speed={1}
+          scale={1}
+          detail={8}
+          warp={1}
+          rotation={0}
+          mouseReact={true}
+          amplitude={0.1}
+          stir={0.5}
+          sheen={0.3}
+          clickSwirl={true}
+          grain={0}
+          fade={0}
+        />
+        <div className="auth__veil" aria-hidden="true" />
 
-        <h2 style={{ fontFamily: "'Instrument Serif', Georgia, serif", fontSize: '2rem', fontWeight: 400, color: '#f8fafc', margin: '0 0 6px' }}>
-          Create Account
-        </h2>
-        <p style={{ color: '#cbd5e1', fontSize: '0.88rem', margin: '0 0 20px', fontWeight: 300 }}>
-          Join VaadIn for automated AI technical interviewing.
-        </p>
-
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', backgroundColor: 'rgba(255, 255, 255, 0.04)', padding: '12px 16px', borderRadius: '12px', border: '1px solid rgba(255, 255, 255, 0.08)', marginBottom: '20px' }}>
-          <div>
-            <div style={{ fontWeight: 600, color: '#f8fafc', fontSize: '0.88rem' }}>🏢 Company Account</div>
-            <div style={{ fontSize: '0.75rem', color: '#cbd5e1' }}>Post jobs and review candidate evaluations</div>
+        <div className="auth__card auth__card--wide">
+          <div className="auth__head">
+            <Link to="/" className="auth__brand">
+              <img src={logo} alt="" draggable={false} />
+              VaadIn
+            </Link>
+            <button type="button" onClick={() => navigate('/')} className="auth__back">
+              ← Home
+            </button>
           </div>
-          <input
-            type="checkbox"
-            checked={isCompany}
-            onChange={(e) => setIsCompany(e.target.checked)}
-            style={{ width: '18px', height: '18px', cursor: 'pointer', accentColor: '#8099cc' }}
-          />
-        </div>
 
-        <form onSubmit={handleSignup} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-          <div>
-            <label style={{ display: 'block', fontSize: '0.8rem', color: '#cbd5e1', marginBottom: '6px' }}>{isCompany ? "Contact Name" : "Full Name"}</label>
+          <h2 className="auth__title">Create Account</h2>
+          <p className="auth__sub">Join VaadIn for automated AI technical interviewing.</p>
+
+          <label className="auth__toggle">
+            <span>
+              <span className="auth__toggle-title">🏢 Company Account</span>
+              <span className="auth__toggle-sub">Post jobs and review candidate evaluations</span>
+            </span>
             <input
-              type="text"
-              placeholder="Aarav Mehta"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              required
-              style={{ width: '100%', backgroundColor: '#121217', border: '1px solid rgba(255, 255, 255, 0.15)', borderRadius: '10px', padding: '12px 14px', color: '#f8fafc', outline: 'none' }}
+              type="checkbox"
+              className="auth__check"
+              checked={isCompany}
+              onChange={(e) => setIsCompany(e.target.checked)}
             />
-          </div>
+          </label>
 
-          <div>
-            <label style={{ display: 'block', fontSize: '0.8rem', color: '#cbd5e1', marginBottom: '6px' }}>Email</label>
-            <input
-              type="email"
-              placeholder="name@example.com"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              required
-              style={{ width: '100%', backgroundColor: '#121217', border: '1px solid rgba(255, 255, 255, 0.15)', borderRadius: '10px', padding: '12px 14px', color: '#f8fafc', outline: 'none' }}
-            />
-          </div>
-
-          <div>
-            <label style={{ display: 'block', fontSize: '0.8rem', color: '#cbd5e1', marginBottom: '6px' }}>Password (Min 6 chars)</label>
-            <input
-              type="password"
-              placeholder="••••••••"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              required
-              style={{ width: '100%', backgroundColor: '#121217', border: '1px solid rgba(255, 255, 255, 0.15)', borderRadius: '10px', padding: '12px 14px', color: '#f8fafc', outline: 'none' }}
-            />
-          </div>
-
-          {isCompany && (
-            <div style={{ backgroundColor: 'rgba(128, 153, 204, 0.08)', padding: '16px', borderRadius: '12px', border: '1px solid rgba(128, 153, 204, 0.2)', display: 'flex', flexDirection: 'column', gap: '12px' }}>
-              <div>
-                <label style={{ display: 'block', fontSize: '0.8rem', color: '#8099cc', marginBottom: '4px' }}>Company Name *</label>
-                <input
-                  type="text"
-                  placeholder="Acme Tech"
-                  value={companyName}
-                  onChange={(e) => setCompanyName(e.target.value)}
-                  required
-                  style={{ width: '100%', backgroundColor: '#121217', border: '1px solid rgba(255, 255, 255, 0.15)', borderRadius: '8px', padding: '10px 12px', color: '#f8fafc', outline: 'none' }}
-                />
-              </div>
-              <div>
-                <label style={{ display: 'block', fontSize: '0.8rem', color: '#8099cc', marginBottom: '4px' }}>Company Description</label>
-                <textarea
-                  placeholder="Brief company overview..."
-                  value={companyDescription}
-                  onChange={(e) => setCompanyDescription(e.target.value)}
-                  style={{ width: '100%', backgroundColor: '#121217', border: '1px solid rgba(255, 255, 255, 0.15)', borderRadius: '8px', padding: '10px 12px', color: '#f8fafc', outline: 'none', height: '60px', resize: 'none' }}
-                />
-              </div>
+          <form onSubmit={handleSignup} className="auth__form" style={{ marginTop: '20px' }} autoComplete="on">
+            <div className="auth__field">
+              <label className="auth__label" htmlFor="signup-name">{isCompany ? "Contact Name" : "Full Name"}</label>
+              <input
+                id="signup-name"
+                type="text"
+                className="auth__input"
+                placeholder="Aarav Mehta"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                required
+                autoComplete="name"
+              />
             </div>
-          )}
 
-          {error && <p style={{ color: '#ef4444', fontSize: '0.82rem', margin: 0 }}>{error}</p>}
+            <div className="auth__field">
+              <label className="auth__label" htmlFor="signup-email">Email</label>
+              <input
+                id="signup-email"
+                type="email"
+                className="auth__input"
+                placeholder="name@example.com"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                required
+                autoComplete="email"
+              />
+            </div>
 
-          <button
-            type="submit"
-            disabled={loading}
-            style={{ width: '100%', backgroundColor: '#f8fafc', color: '#08080a', border: 'none', padding: '12px', borderRadius: '10px', fontSize: '0.88rem', fontWeight: 600, cursor: 'pointer', marginTop: '8px' }}
-          >
-            {loading ? "Creating..." : "Sign Up"}
-          </button>
-        </form>
+            <div className="auth__field">
+              <label className="auth__label" htmlFor="signup-password">Password (Min 6 chars)</label>
+              <input
+                id="signup-password"
+                type="password"
+                className="auth__input"
+                placeholder="••••••••"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                required
+                autoComplete="new-password"
+              />
+            </div>
 
-        <p style={{ marginTop: '20px', fontSize: '0.85rem', color: '#cbd5e1', textAlign: 'center' }}>
-          Already registered? <Link to="/login" style={{ color: '#8099cc', textDecoration: 'none' }}>Log in</Link>
-        </p>
+            {isCompany && (
+              <div className="auth__company">
+                <div className="auth__field">
+                  <label className="auth__label" htmlFor="signup-company">Company Name *</label>
+                  <input
+                    id="signup-company"
+                    type="text"
+                    className="auth__input"
+                    placeholder="Acme Tech"
+                    value={companyName}
+                    onChange={(e) => setCompanyName(e.target.value)}
+                    required
+                  />
+                </div>
+                <div className="auth__field">
+                  <label className="auth__label" htmlFor="signup-company-desc">Company Description</label>
+                  <textarea
+                    id="signup-company-desc"
+                    className="auth__input auth__input--area"
+                    placeholder="Brief company overview..."
+                    value={companyDescription}
+                    onChange={(e) => setCompanyDescription(e.target.value)}
+                  />
+                </div>
+              </div>
+            )}
+
+            {error && <p className="auth__error">{error}</p>}
+
+            <SpecularButton
+              type="submit"
+              size="md"
+              radius={12}
+              className="auth__submit"
+              tint="#000000"
+              tintOpacity={0.38}
+              textColor="#f5f5f5"
+              lineColor="#ffffff"
+              baseColor="#525252"
+              intensity={1}
+              idleIntensity={0.35}
+              shineSize={10}
+              shineFade={34}
+              thickness={1.2}
+              glow={1}
+              followMouse
+              proximity={200}
+              disabled={loading}
+            >
+              {loading ? "Creating..." : "Sign Up"}
+            </SpecularButton>
+          </form>
+
+          <p className="auth__footer">
+            Already registered? <Link to="/login">Log in</Link>
+          </p>
+        </div>
       </div>
     </div>
   );
@@ -2070,39 +2112,95 @@ function InterviewPage() {
     startInterview();
   }, []);
 
+  const isAiSpeaking = latestSubtitle.speaker === "VaadIn AI" || latestSubtitle.speaker === "AI";
+
   return (
-    <div style={{ position: 'fixed', inset: 0, backgroundColor: '#08080a', zIndex: 9999, display: 'flex', flexDirection: 'column' }}>
-      <div style={{ padding: '14px 28px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', backgroundColor: '#0a0a0d', borderBottom: '1px solid rgba(255,255,255,0.08)' }}>
-        <span style={{ fontFamily: "'Instrument Serif', Georgia, serif", fontSize: '1.4rem', color: '#f8fafc' }}>
-          VaadIn Interview
-        </span>
-        <div style={{ fontSize: '0.85rem', color: '#8099cc', fontWeight: 600 }}>
-          Time Left: {Math.floor(timeLeft / 60)}:{(timeLeft % 60).toString().padStart(2, "0")}
+    <div className="interview-screen">
+      <header className="interview-topbar">
+        <div className="interview-topbar__brand">
+          <img src={logo} alt="" className="interview-topbar__logo" draggable={false} />
+          <span className="interview-topbar__title">VaadIn</span>
+          <span className="interview-topbar__tag">AI Voice Screening</span>
         </div>
-        <button onClick={stopInterview} disabled={stopping} style={{ backgroundColor: '#ef4444', color: '#fff', border: 'none', padding: '8px 18px', borderRadius: '8px', cursor: 'pointer', fontWeight: 600, fontSize: '0.85rem' }}>
+
+        <div className="interview-topbar__timer">
+          <span
+            className="interview-topbar__dot"
+            style={{
+              backgroundColor: timeLeft < 30 ? '#ef4444' : '#10b981',
+              boxShadow: timeLeft < 30 ? '0 0 8px #ef4444' : '0 0 8px #10b981'
+            }}
+          />
+          <span style={{ fontFamily: 'monospace', fontWeight: 600, color: '#f8fafc' }}>
+            {Math.floor(timeLeft / 60)}:{(timeLeft % 60).toString().padStart(2, "0")}
+          </span>
+          <span>remaining</span>
+        </div>
+
+        <button
+          onClick={stopInterview}
+          disabled={stopping}
+          className="interview-topbar__end-btn"
+        >
           {stopping ? "Ending..." : "End Interview"}
         </button>
-      </div>
+      </header>
 
-      <div style={{ flex: 1, display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '2px', backgroundColor: '#121217' }}>
-        <div style={{ position: 'relative', backgroundColor: '#08080a', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-          <img src={AI_AGENT_GIF} alt="AI Avatar" style={{ width: '200px', height: '200px', borderRadius: '50%', objectFit: 'cover', border: '2px solid #8099cc' }} />
-          <span style={{ position: 'absolute', top: '16px', left: '16px', backgroundColor: 'rgba(0,0,0,0.6)', padding: '4px 12px', borderRadius: '999px', fontSize: '0.78rem', color: '#f8fafc' }}>
-            🤖 AI Interviewer
+      <main className="interview-stage">
+        {/* Left AI Evaluator panel with centered Strands visualizer */}
+        <section className="interview-panel interview-panel--ai">
+          <div className={`interview-strands-bg${isAiSpeaking ? ' interview-strands-bg--speaking' : ''}`}>
+            <Strands
+              colors={['#2dd4bf', '#38bdf8', '#6366f1', '#a78bfa', '#c4f1ff']}
+              count={3}
+              speed={0.75}
+              amplitude={0.82}
+              waviness={1.05}
+              thickness={0.92}
+              glow={1.05}
+              taper={0.88}
+              spread={0.82}
+              intensity={1.15}
+              saturation={1.2}
+              scale={1}
+              glass={true}
+              interactive={true}
+              listening
+              energy={isAiSpeaking ? 0.95 : 0.38}
+            />
+          </div>
+          <div className="interview-panel__vignette" />
+
+          <span className="interview-panel__badge">
+            <span className="interview-panel__badge-dot" />
+            AI Evaluator
           </span>
-        </div>
+        </section>
 
-        <div style={{ position: 'relative', backgroundColor: '#000000', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-          <video ref={videoElementRef} autoPlay muted playsInline style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-          <span style={{ position: 'absolute', top: '16px', left: '16px', backgroundColor: 'rgba(0,0,0,0.6)', padding: '4px 12px', borderRadius: '999px', fontSize: '0.78rem', color: '#f8fafc' }}>
-            👤 You
+        {/* Right Candidate Video Panel */}
+        <section className="interview-panel">
+          <span className="interview-panel__badge">
+            <span
+              className="interview-panel__badge-dot"
+              style={{ backgroundColor: '#10b981', boxShadow: '0 0 6px #10b981' }}
+            />
+            Candidate Feed
           </span>
-        </div>
-      </div>
 
-      <div style={{ position: 'absolute', bottom: '24px', left: '50%', transform: 'translateX(-50%)', backgroundColor: 'rgba(10, 10, 13, 0.9)', padding: '12px 24px', borderRadius: '12px', border: '1px solid rgba(255,255,255,0.12)', maxWidth: '750px', width: '90%', textAlign: 'center' }}>
-        <span style={{ color: '#8099cc', fontWeight: 700, marginRight: '8px' }}>[{latestSubtitle.speaker}]</span>
-        <span style={{ color: '#f8fafc', fontSize: '0.95rem' }}>{latestSubtitle.text}</span>
+          <video
+            ref={videoElementRef}
+            autoPlay
+            muted
+            playsInline
+            className="interview-video"
+          />
+        </section>
+      </main>
+
+      {/* Subtitles Overlay */}
+      <div className="interview-subtitles">
+        <span className="interview-subtitles__speaker">{latestSubtitle.speaker}</span>
+        <span className="interview-subtitles__text">{latestSubtitle.text}</span>
       </div>
     </div>
   );

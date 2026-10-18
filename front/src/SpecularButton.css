@@ -25,6 +25,7 @@
   backdrop-filter: blur(var(--sb-blur));
   cursor: pointer;
   outline: none;
+  white-space: nowrap;
   -webkit-tap-highlight-color: transparent;
   transition: transform 0.25s cubic-bezier(0.2, 0.8, 0.2, 1);
 }
