@@ -78,7 +78,6 @@ const navItems = [
   { label: 'How it works', href: '#how-it-works' },
   { label: 'Talent', href: '#talent' },
   { label: 'Insights', href: '#insights' },
-  { label: 'Active Roles', href: '#jobs-section' },
   { label: 'Pricing', href: '#pricing' }
 ];
 
@@ -426,20 +425,25 @@ function LandingPage() {
       </span>
 
       <header ref={headerRef} className="site-header">
-        <div className="site-header__inner" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-          <PillNav
-            logo={logo}
-            logoAlt="VaadIn"
-            logoHref="#top"
-            items={navItems}
-            itemStyle="pill"
-            hoverEffect="fill"
-            indicator="dot"
-            theme="dark"
-            collapseBelow={640}
-            ariaLabel="Main"
-          />
-          <div style={{ display: 'flex', gap: '12px', zIndex: 30 }}>
+        <div className="site-header__inner" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%' }}>
+          <a href="#top" style={{ display: 'flex', alignItems: 'center', gap: '10px', textDecoration: 'none', color: '#f8fafc', fontSize: '1.2rem', fontWeight: 600, zIndex: 30 }}>
+            <img src={logo} alt="VaadIn" style={{ width: '28px', height: '28px' }} draggable={false} />
+            <span>VaadIn</span>
+          </a>
+
+          <div style={{ flex: 1, display: 'flex', justifyContent: 'center' }}>
+            <PillNav
+              items={navItems}
+              itemStyle="pill"
+              hoverEffect="fill"
+              indicator="dot"
+              theme="dark"
+              collapseBelow={640}
+              ariaLabel="Main"
+            />
+          </div>
+
+          <div style={{ display: 'flex', gap: '12px', zIndex: 30, alignItems: 'center' }}>
             <button
               onClick={() => navigate('/login')}
               style={{
@@ -673,82 +677,6 @@ function LandingPage() {
           <InsightAccordion />
         </section>
 
-        {/* Active Technical Roles Section */}
-        <section id="jobs-section" style={{ width: '100%', maxWidth: '1200px', marginTop: 'clamp(100px, 16vh, 180px)' }}>
-          <div style={{ textAlign: 'center', marginBottom: '40px' }}>
-            <span style={{ fontSize: '0.72rem', letterSpacing: '0.16em', textTransform: 'uppercase', color: '#8099cc' }}>
-              Open Positions
-            </span>
-            <h2 style={{ fontFamily: "'Instrument Serif', Georgia, serif", fontSize: 'clamp(2.5rem, 4.8vw, 4.2rem)', fontWeight: 400, color: '#f8fafc', margin: '10px 0 0' }}>
-              Explore Live Technical Roles
-            </h2>
-            <p style={{ color: '#cbd5e1', fontSize: '1rem', marginTop: '10px', fontWeight: 300 }}>
-              Sign up or log in to take an automated AI voice interview for any position.
-            </p>
-          </div>
-
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '20px' }}>
-            {allJobs.map((job) => (
-              <div
-                key={job.id}
-                style={{
-                  backgroundColor: '#0a0a0d',
-                  border: '1px solid rgba(255, 255, 255, 0.08)',
-                  borderRadius: '20px',
-                  padding: '24px',
-                  display: 'flex',
-                  flexDirection: 'column',
-                  position: 'relative',
-                  overflow: 'hidden'
-                }}
-              >
-                <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: '3px', background: job.gradient || 'linear-gradient(135deg, #8099cc, #495a7d)' }} />
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-                  <div>
-                    <h3 style={{ fontFamily: "'Instrument Serif', Georgia, serif", fontSize: '1.6rem', fontWeight: 400, color: '#f8fafc', margin: 0 }}>
-                      {job.role}
-                    </h3>
-                    <span style={{ fontSize: '0.8rem', color: '#8099cc', fontWeight: 500, marginTop: '4px', display: 'block' }}>
-                      🏢 {job.companyName || "VaadIn Partner"}
-                    </span>
-                  </div>
-                  <span style={{ backgroundColor: 'rgba(128, 153, 204, 0.15)', color: '#8099cc', fontSize: '0.72rem', fontWeight: 600, padding: '4px 10px', borderRadius: '999px', border: '1px solid rgba(128, 153, 204, 0.3)' }}>
-                    AI Ready
-                  </span>
-                </div>
-
-                <p style={{ color: '#cbd5e1', fontSize: '0.88rem', lineHeight: '1.6', margin: '14px 0 16px', fontWeight: 300 }}>
-                  {job.description}
-                </p>
-
-                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px', marginBottom: '20px' }}>
-                  {(Array.isArray(job.requirements) ? job.requirements : [job.requirements]).map((req) => (
-                    <span key={req} style={{ backgroundColor: 'rgba(255, 255, 255, 0.05)', border: '1px solid rgba(255, 255, 255, 0.1)', padding: '3px 10px', borderRadius: '999px', fontSize: '0.75rem', color: '#cbd5e1' }}>
-                      {req}
-                    </span>
-                  ))}
-                </div>
-
-                <button
-                  onClick={() => navigate('/signup')}
-                  style={{
-                    marginTop: 'auto',
-                    backgroundColor: '#f8fafc',
-                    color: '#08080a',
-                    border: 'none',
-                    padding: '12px',
-                    borderRadius: '12px',
-                    fontSize: '0.88rem',
-                    fontWeight: 600,
-                    cursor: 'pointer'
-                  }}
-                >
-                  Sign Up to Take Screening →
-                </button>
-              </div>
-            ))}
-          </div>
-        </section>
 
         <section ref={pricingRef} id="pricing" className="pricing" aria-labelledby="pricing-title">
           <h2 id="pricing-title" className="pricing__title" data-reveal>
@@ -800,7 +728,6 @@ function LandingPage() {
               <a href="#how-it-works">How it works</a>
               <a href="#talent">Talent</a>
               <a href="#insights">Insights</a>
-              <a href="#jobs-section">Active Roles</a>
               <a href="#pricing">Pricing</a>
             </nav>
           </div>
