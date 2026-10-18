@@ -21,19 +21,22 @@ dotenv.config();
 // In-memory fallback stores
 const memoryUsers = [];
 
-// Connect to MongoDB Atlas if available
+// Connect to MongoDB Atlas / Local MongoDB if available with IPv4 fallback
 const mongoUri = process.env.MONGO_URI || config.mongoUri;
 if (mongoUri) {
-  mongoose.connect(mongoUri, { serverSelectionTimeoutMS: 2000 })
+  mongoose.connect(mongoUri, {
+    serverSelectionTimeoutMS: 3000,
+    family: 4
+  })
     .then(async () => {
-      console.log("Connected to MongoDB Atlas successfully.");
+      console.log("Connected to MongoDB successfully.");
       try {
         await User.syncIndexes();
       } catch (idxErr) {
         console.warn("Index sync notice:", idxErr.message);
       }
     })
-    .catch((err) => console.warn("MongoDB Atlas connection warning (using in-memory fallback):", err.message));
+    .catch((err) => console.warn("MongoDB connection warning (using in-memory fallback):", err.message));
 }
 
 export const port = config.port;
